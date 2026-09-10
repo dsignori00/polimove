@@ -106,6 +106,7 @@ x_lim = [0 inf];
 [lid_clust, rad_clust, cam_yolo, lid_pp, v2v] = load_perception(log);
 cam_yolo.sens_stamp(cam_yolo.sens_stamp < 0) = NaN;
 
+[cam_only, cam_enh] = splitCamYolo(cam_yolo);
 
 if(use_ref || use_sim_ref); gt = load_ref(log, use_sim_ref, use_ref, log_ref); end
 if(compare) 
@@ -115,11 +116,14 @@ if(compare)
     lid_clust2.stamp = lid_clust2.stamp + double(log_2.time_offset_nsec-log.time_offset_nsec)*1e-9;
     rad_clust2.stamp = rad_clust2.stamp + double(log_2.time_offset_nsec-log.time_offset_nsec)*1e-9;
     lid_pp2.stamp = lid_pp2.stamp + double(log_2.time_offset_nsec-log.time_offset_nsec)*1e-9;
+    [cam_only2, cam_enh2] = splitCamYolo(cam_yolo2);
 end
 
 sensors = { ...
-    struct('s', cam_yolo,  'col', col.conly,  'name', 'camera'), ...
-    struct('s', cam_yolo2,  'col', col.conly2,  'name', 'camera2'), ...
+    struct('s', cam_only,  'col', col.conly,  'name', 'cameraOnly'), ...
+    struct('s', cam_only2,  'col', col.conly2,  'name', 'cameraOnly2'), ...
+    struct('s', cam_enh,  'col', col.cenh,  'name', 'cameraEnh'), ...
+    struct('s', cam_enh2,  'col', col.cenh2,  'name', 'cameraEnh'), ...
 };
 
 
