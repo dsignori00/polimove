@@ -5,4 +5,5 @@ bags/*
 !/src/perception/opponent_gps/opp_data/.gitkeep
 !/src/perception/opponent_gps/mat/.gitkeep
 /src/scripts/csv_to_share/*
+*.asv
 
