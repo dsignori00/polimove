@@ -153,6 +153,7 @@ state_map;
 state_cog;
 range;
 map;
+frustum_viz;
 
 % covariance;
 % error_analysis;
