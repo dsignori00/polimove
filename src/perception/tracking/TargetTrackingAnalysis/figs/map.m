@@ -16,10 +16,15 @@ function refreshTimeButtonPushed(src, event)
 
     % --- fetch from base ---
     ax        = evalin('base','ax');
-    traj_db  = evalin('base','trajDatabase');
-    sensors  = evalin('base','sensors');
-    col      = evalin('base','col');
-    tt       = evalin('base','tt');
+    traj_db     = evalin('base','trajDatabase');
+    sensors     = evalin('base','sensors');
+    col         = evalin('base','col');
+    tt_exists   = evalin('base','tt_exists');
+    tt2_exists  = evalin('base','tt2_exists');
+    tt3_exists  = evalin('base','tt3_exists');
+    if(tt_exists)
+        tt       = evalin('base','tt');
+    end
     name1    = evalin('base','name1');
 
     use_ref      = evalin('base','use_ref');
@@ -28,11 +33,11 @@ function refreshTimeButtonPushed(src, event)
     compare2     = evalin('base','compare2');
 
     if compare
-        tt2   = evalin('base','tt2');
+        if (tt2_exists); tt2   = evalin('base','tt2'); end
         name2 = evalin('base','name2');
     end
     if compare2
-        tt3   = evalin('base','tt3');
+        if (tt3_exists); tt3   = evalin('base','tt3'); end
         name3 = evalin('base','name3');
     end
     if use_ref || use_sim_ref
@@ -41,15 +46,14 @@ function refreshTimeButtonPushed(src, event)
 
     % --- time window ---
     t_lim = xlim(ax(1));
-
-    [t1_tt, tend_tt] = timeWindowIdx(tt.stamp, t_lim);
-    if compare
+    if (tt_exists); [t1_tt, tend_tt] = timeWindowIdx(tt.stamp, t_lim); end
+    if compare && tt2_exists
         [t1_tt2, tend_tt2] = timeWindowIdx(tt2.stamp, t_lim);
     end
     if use_ref || use_sim_ref
         [t1_gt, tend_gt] = timeWindowIdx(gt.stamp, t_lim);
     end
-    if compare2
+    if compare2 && tt3_exists
         [t1_tt3, tend_tt3] = timeWindowIdx(tt3.stamp, t_lim);
     end
 
@@ -91,7 +95,8 @@ function refreshTimeButtonPushed(src, event)
 
 
     % --- tracked targets ---
-    plot(tt.x_map(t1_tt:tend_tt,1:tt.max_opp),tt.y_map(t1_tt:tend_tt,1:tt.max_opp),'Color',col.tt,'HandleVisibility','off');
+    if(tt_exists)
+        plot(tt.x_map(t1_tt:tend_tt,1:tt.max_opp),tt.y_map(t1_tt:tend_tt,1:tt.max_opp),'Color',col.tt,'HandleVisibility','off');
     % quiver( ...
     %     tt.x_map(t1_tt:tend_tt,1:tt.max_opp), ...
     %     tt.y_map(t1_tt:tend_tt,1:tt.max_opp), ...
@@ -101,13 +106,14 @@ function refreshTimeButtonPushed(src, event)
     %     'Color', col.tt, ...
     %     'HandleVisibility','off', ...
     %     'LineWidth', 2.5);
-    plot_tt(NaN,NaN,1,col.tt,name1);
+        plot_tt(NaN,NaN,1,col.tt,name1);
+    end
 
-    if compare
+    if compare && tt2_exists
         plot(tt2.x_map(t1_tt2:tend_tt2,1:tt2.max_opp),tt2.y_map(t1_tt2:tend_tt2,1:tt2.max_opp),'Color',col.tt2,'HandleVisibility','off');
         plot_tt(NaN,NaN,1,col.tt2,name2);
     end
-    if compare2
+    if compare2 && tt3_exists
         plot(tt3.x_map(t1_tt3:tend_tt3,1:tt3.max_opp),tt3.y_map(t1_tt3:tend_tt3,1:tt3.max_opp),'Color',col.tt3,'HandleVisibility','off');
         plot_tt(NaN,NaN,1,col.tt3,name3);
     end

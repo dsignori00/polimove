@@ -109,17 +109,22 @@ if(use_ref || use_sim_ref); gt = load_ref(log, use_sim_ref, use_ref, log_ref); e
 tt = load_tt(log);
 tt.col = col.tt;
 tt.name = name1;
+tt_exists = true;
+tt2_exists = false;
+tt3_exists = false;
 if(compare) 
     tt2 = load_tt(log_2); 
     tt2.stamp = tt2.stamp + double(log_2.time_offset_nsec-log.time_offset_nsec)*1e-9;
     tt2.col = col.tt2;
     tt2.name = name2;
+    tt2_exists = true;
 end
 if(compare2)
     tt3 = load_tt(log_3); 
     tt3.stamp = tt3.stamp + double(log_3.time_offset_nsec-log.time_offset_nsec)*1e-9;
     tt3.col = col.tt3;
     tt3.name = name3;
+    tt2_exists = true;
 end
 
 cam_yolo.sens_stamp(cam_yolo.sens_stamp < 0) = NaN;

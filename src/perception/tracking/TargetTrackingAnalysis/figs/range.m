@@ -10,14 +10,16 @@ for i = 1:numel(sensors)
     plot_detections(s.sens_stamp, s.range, s.max_det, sensors{i}.col, sensors{i}.name);
 end
 
-tt.range = sqrt(tt.x_rel.^2 + tt.y_rel.^2);
-plot_tt(tt.stamp, tt.range, tt.max_opp, col.tt, name1);
+if(tt_exists)
+    tt.range = sqrt(tt.x_rel.^2 + tt.y_rel.^2);
+    plot_tt(tt.stamp, tt.range, tt.max_opp, col.tt, name1);
+end
 
-if(compare) 
+if(compare && tt2_exists) 
     tt2.range = sqrt(tt2.x_rel.^2 + tt2.y_rel.^2);
     plot_tt(tt2.stamp, tt2.range, tt2.max_opp, col.tt2, name2);
 end
-if(compare2)
+if(compare2 && tt3_exists)
     tt3.range = sqrt(tt3.x_rel.^2 + tt3.y_rel.^2);
     plot_tt(tt3.stamp, tt3.range, tt3.max_opp, col.tt3, name3);
 end
@@ -36,8 +38,8 @@ for i = 1:numel(sensors)
         plot_detections(s.sens_stamp, s.rho_dot, s.max_det, sensors{i}.col, sensors{i}.name);
     end
 end
-plot_tt(tt.stamp, tt.rho_dot, tt.max_opp, col.tt, name1);
-if(compare); plot_tt(tt2.stamp, tt2.rho_dot, tt2.max_opp, col.tt2, name2); end
-if(compare2); plot_tt(tt3.stamp, tt3.rho_dot, tt3.max_opp, col.tt3, name3); end
+if(tt_exists); plot_tt(tt.stamp, tt.rho_dot, tt.max_opp, col.tt, name1); end
+if(compare && tt2_exists); plot_tt(tt2.stamp, tt2.rho_dot, tt2.max_opp, col.tt2, name2); end
+if(compare2 && tt3_exists); plot_tt(tt3.stamp, tt3.rho_dot, tt3.max_opp, col.tt3, name3); end
 if(use_ref || use_sim_ref); plot(gt.stamp, gt.rho_dot, 'Color',col.ref,'DisplayName','gt'); end
 grid on; ylabel('rho dot [m/s]'); legend show;
