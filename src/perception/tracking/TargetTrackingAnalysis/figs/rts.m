@@ -1,6 +1,7 @@
 % RLS - viewer interattivo del buffer storico OpponentHistory (slot 1).
 % Plotta la velocita' longitudinale (vx): filtro smooth (buffer, scorre
-% frame per frame), filtro normale, GT e misure quando disponibili.
+% frame per frame), filtro normale (per ciascun log), GT e misure quando
+% disponibili.
 %
 % Se in TargetTrackingAnalysis sono attivi compare/compare2, plotta la
 % history anche di log_2 / log_3 (un colore per log). I log privi di
@@ -56,7 +57,13 @@ if ~isempty(rls_rawOpp) && isfield(rls_rawOpp, 'stamp__tot')
 end
 
 % ---------- history di ciascun log ----------
-rls_hist = struct('V', {}, 'T', {}, 'n', {}, 'name', {}, 'col', {}, 'ids', {}, 'nv', {});
+% Il campo 'now' (una riga = un aggiornamento del buffer) serve a
+% sincronizzare log con numero di snapshot/sampling time diversi: durante
+% il playback, per i log non primari si cerca la riga con 'now' piu'
+% vicino al 'now' del log primario, invece di usare lo stesso indice di
+% riga per tutti i log (valido solo se tutti campionano alla stessa
+% cadenza).
+rls_hist = struct('V', {}, 'T', {}, 'n', {}, 'name', {}, 'col', {}, 'ids', {}, 'nv', {}, 'now', {});
 for rls_k = 1:numel(rls_logs)
     rls_Lk = rls_logs{rls_k};
     if ~isfield(rls_Lk, 'perception__opponents_history')
@@ -103,18 +110,32 @@ for rls_k = 1:numel(rls_logs)
     rls_hist(end).col = rls_cols{rls_k};
     rls_hist(end).ids = rls_idsk(:, rls_slot);
     rls_hist(end).nv = rls_nvk;
+    rls_hist(end).now = rls_Tk(:, end);
 end
 
 if isempty(rls_hist)
     error('rls: nessun log con perception__opponents_history disponibile.');
 end
 
-% ---------- filtro normale (log primario) ----------
-rls_rawT = []; rls_rawV = [];
-if ~isempty(rls_rawOpp) && isfield(rls_rawOpp, rls_f) && isfield(rls_rawOpp, 'stamp__tot')
-    rls_rawV = double(rls_rawOpp.(rls_f)(:, rls_slot));
-    rls_rawV(rls_rawV == 0) = NaN;
-    rls_rawT = double(rls_rawOpp.stamp__tot) - rls_t0;
+% ---------- filtro normale ("history 0") per ciascun log ----------
+rls_raw = struct('T', {}, 'V', {}, 'name', {}, 'col', {});
+for rls_k = 1:numel(rls_logs)
+    rls_Lk = rls_logs{rls_k};
+    if ~isfield(rls_Lk, 'perception__opponents')
+        continue;
+    end
+    rls_oppk = rls_Lk.perception__opponents;
+    if ~isfield(rls_oppk, rls_f) || ~isfield(rls_oppk, 'stamp__tot')
+        continue;
+    end
+    rls_Vk = double(rls_oppk.(rls_f)(:, rls_slot));
+    rls_Vk(rls_Vk == 0) = NaN;
+    rls_Tk = double(rls_oppk.stamp__tot) - rls_t0 + rls_shifts(rls_k);
+
+    rls_raw(end+1).T = rls_Tk; %#ok<SAGROW>
+    rls_raw(end).V = rls_Vk;
+    rls_raw(end).name = rls_names{rls_k};
+    rls_raw(end).col = rls_cols{rls_k};
 end
 
 % ---------- GT ----------
@@ -169,9 +190,9 @@ hold(rls_ax, 'on'); grid(rls_ax, 'on');
 if ~isempty(rls_gtT)
     plot(rls_ax, rls_gtT, rls_gtV, 'k-', 'DisplayName', 'GT');
 end
-if ~isempty(rls_rawT)
-    plot(rls_ax, rls_rawT, rls_rawV, '-', 'Color', [0.90 0.55 0.10], ...
-        'DisplayName', 'filtro normale');
+for rls_k = 1:numel(rls_raw)
+    plot(rls_ax, rls_raw(rls_k).T, rls_raw(rls_k).V, '-', 'Color', rls_raw(rls_k).col, ...
+        'DisplayName', sprintf('history 0 %s', rls_raw(rls_k).name));
 end
 if ~isempty(rls_vxMeasV)
     plot(rls_ax, rls_vxMeasTs, rls_vxMeasV, 'o', 'Color', [0.10 0.60 0.55], ...
@@ -196,7 +217,7 @@ rls_startI = find(rls_hist(1).nv > 0, 1);
 if isempty(rls_startI), rls_startI = 1; end
 
 rls_st.hist = rls_hist;
-rls_st.n = max([rls_hist.n]);
+rls_st.n = rls_hist(1).n;   % il frame avanza sulle righe del log primario
 rls_st.i = rls_startI;
 rls_st.startI = rls_startI;
 rls_st.h = rls_h;
@@ -211,7 +232,7 @@ guidata(rls_fig, rls_st);
 rls_draw(rls_fig);
 
 clear rls_k rls_r rls_Lk rls_ohk rls_idsk rls_nk rls_nvk rls_Vk rls_Tk rls_stk rls_pre
-clear rls_rawT rls_rawV rls_gtT rls_gtV rls_vxMeasV rls_vxMeasTs rls_vxMeasTa rls_st
+clear rls_raw rls_oppk rls_gtT rls_gtV rls_vxMeasV rls_vxMeasTs rls_vxMeasTa rls_st
 clear rls_s rls_rd rls_xr rls_yr rls_yawr rls_beta rls_aspect rls_c rls_teRaw
 clear rls_egoVxAll rls_egoValid rls_sensStamp rls_arrStamp rls_vegoI rls_vxAll rls_goodMeas
 clear rls_logs rls_names rls_cols rls_shifts rls_f rls_field rls_hist
@@ -277,9 +298,21 @@ end
 
 function rls_draw(fig)
 s = guidata(fig);
+
+% riga corrente del log primario = riferimento temporale del frame
+ik1 = min(s.i, s.hist(1).n);
+refNow = s.hist(1).now(ik1);
+
 curT = NaN;
 for k = 1:numel(s.hist)
-    ik = min(s.i, s.hist(k).n);
+    if k == 1
+        ik = ik1;
+    else
+        % log non primario: niente indice condiviso (puo' avere un
+        % numero di snapshot diverso), si cerca la riga il cui 'now'
+        % e' piu' vicino nel tempo a refNow.
+        ik = rls_nearest_row(s.hist(k).now, refNow);
+    end
     x = s.hist(k).T(ik, :);
     y = s.hist(k).V(ik, :);
     set(s.h(k), 'XData', x, 'YData', y);
@@ -291,6 +324,23 @@ if isfinite(curT)
 end
 if s.playing, status = 'PLAY'; else, status = 'pausa'; end
 title(s.ax, sprintf('frame %d/%d | slot#%d obs id=%d | %s', ...
-    s.i, s.n, s.slot, s.hist(1).ids(min(s.i, s.hist(1).n)), status));
+    s.i, s.n, s.slot, s.hist(1).ids(ik1), status));
 drawnow limitrate;
+end
+
+function ik = rls_nearest_row(nowVec, refNow)
+% Indice della riga di nowVec (vettore di timestamp 'now', uno per riga
+% del buffer di un log) piu' vicina a refNow. Gestisce NaN e il caso in
+% cui refNow stesso sia NaN (usa la prima riga valida).
+valid = find(isfinite(nowVec));
+if isempty(valid)
+    ik = 1;
+    return;
+end
+if isnan(refNow)
+    ik = valid(1);
+    return;
+end
+[~, j] = min(abs(nowVec(valid) - refNow));
+ik = valid(j);
 end

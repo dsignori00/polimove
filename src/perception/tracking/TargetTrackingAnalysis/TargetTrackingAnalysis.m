@@ -5,7 +5,7 @@ link_axes_mode = 'all'; % 'none', 'figure', or 'all'
 
 use_ref     = true;
 use_sim_ref = false;
-compare     = false;
+compare     = true;
 compare2    = false;
 
 opp_idx     = 1;
@@ -39,7 +39,7 @@ if (~exist('log','var'))
     [file,path] = uigetfile(fullfile(normal_path,'*.mat'),'Load log');
     load(fullfile(path,file));
 end
-name1 = 'old';
+name1 = 'no radar';
 
 % load log 2
 if(compare)
@@ -53,7 +53,7 @@ if(compare)
         clearvars tmp;
         end
     end
-    name2 = 'new';
+    name2 = 'all sensors';
 end
 
 % load log 3
@@ -174,5 +174,7 @@ end
 %ramp;
 %latency_delay;
 %outlier_analysis;
+%rts_sens_analysis
+rts
 
 link_axes();

@@ -11,6 +11,15 @@
 %
 %  Acceleration is used only as the smoothed derivative of v_x to segment
 %  maneuvers and separate steady-state/transient samples for the RMSE.
+%
+%  NOTE on the buffer-age axis (dLag): the 0 ms reference point is
+%  anchored to lag 1 (not lag 0). dLag is rebased right after its
+%  computation by subtracting dLag(2) (= lag 1, since col = N-(0:nLag-1)
+%  and the printed label is j-1) from every entry. Lag 0, being fresher
+%  than lag 1, therefore reads a small NEGATIVE buffer age after the
+%  rebase. This only affects the displayed/printed buffer-age values
+%  (table, Figure 3, Figure 4); it does not change tnow/lr, the masks,
+%  or the onset-delay (dOnset) computation, which are unaffected.
 % ====================================================================
 
 %% ==================== PARAMETERS ====================
@@ -79,6 +88,11 @@ end
 dLag = nan(nLag,1);
 for j = 1:nLag
     if any(M(:,j)), dLag(j) = median(L(M(:,j), j)) * 1e3; end
+end
+
+% --- rebase buffer-age axis: 0 ms reference = lag 1 (not lag 0) ---
+if nLag >= 2 && isfinite(dLag(2))
+    dLag = dLag - dLag(2);
 end
 
 SS = buildLagSeries(V, T, M, col, tnow);   % estimated v_x series, by lag
@@ -196,6 +210,7 @@ fprintf(' valid maneuvers = %d   (events common to all lags: %s)\n\n', ...
         size(ev,1), mat2str(sum(okEv,1)));
 
 fprintf(' lag  delay[ms]   RMSE_all  RMSE_steady  RMSE_tran\n');
+fprintf('      (0 ms = lag 1)\n');
 for j = 1:nLag
     if isfinite(R(j,1))
         fprintf('%4d  %8.0f   %8.3f   %9.3f  %9.3f\n', j-1, R(j,:));
@@ -270,7 +285,7 @@ plot(R(:,1), R(:,3), 'o-',  'LineWidth', 1.6, 'Color', [0.10 0.55 0.25], ...
      'DisplayName', 'steady-state');
 plot(R(:,1), R(:,4), 's-',  'LineWidth', 1.6, 'Color', [0.85 0.20 0.10], ...
      'DisplayName', 'transient');
-xlabel('delay [ms]'); ylabel('RMSE v_x [m/s]');
+xlabel('delay [ms]  (0 ms = lag 1)'); ylabel('RMSE v_x [m/s]');
 legend('Location', 'best'); title('RMSE vs GT(t-d) by regime');
 
 %% ==================== FIGURE 4: DELAY ANALYSIS ====================
@@ -282,7 +297,7 @@ for f = 1:nF
         'DisplayName', sprintf('threshold %.0f%%', brkFrac(f)*100));
 end
 yline(0, 'k-', 'LineWidth', 0.8, 'HandleVisibility', 'off');
-xlabel('buffer age [ms]'); ylabel('onset delay [ms]   (+ = delay, - = lead)');
+xlabel('buffer age [ms]  (0 ms = lag 1)'); ylabel('onset delay [ms]   (+ = delay, - = lead)');
 legend('Location', 'best');
 title('Delay Analysis');
 
