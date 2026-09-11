@@ -143,12 +143,17 @@ if (compare2); tt3_exists = exist('tt3', 'var'); end
 %     end
 % end
 
+% FRUSTUM SETTINGS
+VISUALIZE_FRUSTUM = [false, false, true, false, false, false, false];
+CAMERA_NAMES = ["camera_sl","camera_fl","camera_fr", "camera_sr", "camera_rr", "camera_r", "camera_rl"];
+
+
 
 %% PLOTTING
 
 % info;
 % detections;
-latency;
+% latency;
 state_map;
 state_cog;
 range;

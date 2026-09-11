@@ -1,7 +1,8 @@
 %% FRUSTUM VISUALIZATION
+assert(sum(VISUALIZE_FRUSTUM)<=1,"VISUALIZE_FRUSTUM must have at most one camera selected")
 
-camera_idx = 2;
-camera_name = "camera_fr";
+camera_idx = find(VISUALIZE_FRUSTUM == true, 1, 'first');
+camera_name = CAMERA_NAMES(camera_idx);
 
 streams = loadFrustumStreams(log, camera_name);
 
