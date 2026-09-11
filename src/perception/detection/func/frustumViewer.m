@@ -3,13 +3,21 @@ function fig = frustumViewer(streams, overlays, cfg)
     timeline = streams(1).t;
 
     n_samples = numel(timeline);
-    sample_idx = 1;
+    selected_samples = 1:n_samples;
+    selected_idx = 1;
 
     fig = figure( ...
         'Name', 'Frustum viewer', ...
         'NumberTitle', 'off');
 
     ax = axes(fig);
+
+    uicontrol(fig, ...
+        'Style', 'pushbutton', ...
+        'String', 'Refresh', ...
+        'Units', 'normalized', ...
+        'Position', [0.01 0.01 0.1 0.05], ...
+        'Callback', @refreshTimeButtonPushed);
 
     hold(ax, 'on');
     grid(ax, 'on');
@@ -42,33 +50,62 @@ function fig = frustumViewer(streams, overlays, cfg)
     legend(ax, 'Location', 'best');
 
 
+    function refreshTimeButtonPushed(~, ~)
+
+        if ~isfield(cfg, 'time_axis') || ...
+                ~isgraphics(cfg.time_axis, 'axes')
+            warning('FrustumViewer:MissingTimeAxis', ...
+                'No valid time axis is available for selecting the time range.');
+            return
+        end
+
+        t_lim = xlim(cfg.time_axis);
+        selected_samples = find( ...
+            isfinite(timeline) & ...
+            timeline >= t_lim(1) & ...
+            timeline <= t_lim(2));
+        selected_idx = 1;
+
+        if isempty(selected_samples)
+            clearPlot(t_lim);
+            return
+        end
+
+        updatePlot();
+    end
+
+
     function onKeyPress(~, event)
+
+        if isempty(selected_samples)
+            return
+        end
 
         switch event.Key
 
             case 'rightarrow'
-                sample_idx = sample_idx + 1;
+                selected_idx = selected_idx + 1;
 
             case 'leftarrow'
-                sample_idx = sample_idx - 1;
+                selected_idx = selected_idx - 1;
 
             case 'uparrow'
-                sample_idx = sample_idx + cfg.jump;
+                selected_idx = selected_idx + cfg.jump;
 
             case 'downarrow'
-                sample_idx = sample_idx - cfg.jump;
+                selected_idx = selected_idx - cfg.jump;
 
             case 'home'
-                sample_idx = 1;
+                selected_idx = 1;
 
             case 'end'
-                sample_idx = n_samples;
+                selected_idx = numel(selected_samples);
 
             otherwise
                 return
         end
 
-        sample_idx = max(1, min(n_samples, sample_idx));
+        selected_idx = max(1, min(numel(selected_samples), selected_idx));
 
         updatePlot();
     end
@@ -76,6 +113,7 @@ function fig = frustumViewer(streams, overlays, cfg)
 
     function updatePlot()
 
+        sample_idx = selected_samples(selected_idx);
         current_t = timeline(sample_idx);
 
         for i = 1:numel(streams)
@@ -115,10 +153,29 @@ function fig = frustumViewer(streams, overlays, cfg)
 
 
         title(ax, sprintf( ...
-            'Sample %d / %d | t = %.3f s', ...
-            sample_idx, n_samples, current_t));
+            't: %.3f s (%d / %d)', ...
+            current_t, selected_idx, numel(selected_samples)));
 
         drawnow limitrate
+    end
+
+
+    function clearPlot(t_lim)
+
+        for i = 1:numel(cloud_h)
+            set(cloud_h(i), 'XData', nan, 'YData', nan);
+        end
+
+        if ~isempty(overlay_h)
+            delete(overlay_h(isgraphics(overlay_h)));
+        end
+        overlay_h = gobjects(0);
+
+        title(ax, sprintf( ...
+            'No samples in selected range [%.3f, %.3f] s', ...
+            t_lim(1), t_lim(2)));
+
+        drawnow
     end
 end
 

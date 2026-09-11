@@ -11,6 +11,12 @@ cfg.point_size = 7;
 cfg.max_dt = 0.10;
 cfg.jump = 10;
 
+% Use the same selected time window as the map visualization.
+time_axes = ax(isgraphics(ax, 'axes'));
+if ~isempty(time_axes)
+    cfg.time_axis = time_axes(1);
+end
+
 overlays = {};
 
 frustumViewer(streams, overlays, cfg);
