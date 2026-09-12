@@ -18,7 +18,7 @@ rls_period  = 0.1;    % s tra un frame e il successivo in play
 rls_win     = 10;      % s, larghezza finestra scorrevole
 rls_cosMin  = 0.15;   % |cos(aspect)| minimo per le misure radar
 rls_rhoSign = 1;      % segno rho_dot
-rls_radarVx = true;   % overlay misure radar rho_dot->vx
+rls_radarVx = false;   % overlay misure radar rho_dot->vx
 
 rls_field = 'vx';
 rls_f = ['opponents__' rls_field];

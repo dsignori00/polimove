@@ -10,7 +10,7 @@
 %  symmetric by construction, with no bandwidth or noise compensation.
 %
 %  Acceleration is used only as the smoothed derivative of v_x to segment
-%  maneuvers and separate steady-state/transient samples for the RMSE.
+%  maneuvers.
 %
 %  NOTE on the buffer-age axis (dLag): the 0 ms reference point is
 %  anchored to lag 1 (not lag 0). dLag is rebased right after its
@@ -30,10 +30,8 @@ gapMax    = 0.30;                 % s: gap above which plotted lines are split
 useStamp  = false;                % true = lag 0 at the publication timestamp
 dtU       = 0.02;                 % s: uniform working-grid step
 
-% --- v_x derivative (maneuver segmentation and regime classification) ---
-wSmooth   = 0.20;                 % s: smoothing for the derivative used in the RMSE
+% --- v_x derivative (maneuver segmentation) ---
 wSmoothEv = 0.50;                 % s: smoothing for maneuver segmentation
-aThr      = 2.0;                  % m/s^2: steady-state/transient threshold for the RMSE
 aOn       = 1.0;                  % m/s^2: event activation threshold
 aOff      = 0.5;                  % m/s^2: event deactivation threshold (hysteresis, aOff < aOn)
 minGapEv  = 0.30;                 % s: closer events are merged
@@ -102,9 +100,8 @@ gtT = double(gt.stamp) - t0;  gtV = double(gt.vx);
 g   = isfinite(gtT) & isfinite(gtV);
 [gtTu, iu] = unique(gtT(g));  gtVu = gtV(g);  gtVu = gtVu(iu);
 
-dtGt   = median(diff(gtTu));
-aGtCls = gradient(movmean(gtVu, max(3, round(wSmooth  /dtGt))), gtTu);  % regime / RMSE
-aGtEv  = gradient(movmean(gtVu, max(3, round(wSmoothEv/dtGt))), gtTu);  % segmentation
+dtGt  = median(diff(gtTu));
+aGtEv = gradient(movmean(gtVu, max(3, round(wSmoothEv/dtGt))), gtTu);  % segmentation
 
 %% ==================== MANEUVER EVENTS ====================
 ev    = detectEvents(gtTu, aGtEv, aOn, aOff, minGapEv);
@@ -179,41 +176,34 @@ for f = 1:nF
     [Dmed(:,f), nOn(:,f)] = lagStats(dOnset(:,:,f), nLag);
 end
 
-%% ==================== RMSE vs GT(t-d), BY REGIME ====================
+%% ==================== RMSE vs GT(t-d) ====================
 common = all(M, 2) & isfinite(tnow);
 for j = 1:nLag
     c = col(j);
     common = common & T(:,c) >= gtTu(1) & T(:,c) <= gtTu(end);
 end
 
-R  = nan(nLag, 4);   % [delay, RMSE_all, RMSE_steady, RMSE_tran]
-nT = nan(nLag, 1);
+R = nan(nLag, 2);   % [delay, RMSE]
 for j = 1:nLag
     c = col(j);
     if nnz(common) < 10, continue; end
     tt = T(common,c);
     e  = V(common,c) - interp1(gtTu, gtVu, tt, 'linear', NaN);
-    tr = abs(interp1(gtTu, aGtCls, tt, 'linear', NaN)) > aThr;
-    nT(j) = nnz(tr);
-    R(j,:) = [dLag(j), ...
-              sqrt(mean(e.^2,     'omitnan')), ...
-              sqrt(mean(e(~tr).^2,'omitnan')), ...
-              sqrt(mean(e( tr).^2,'omitnan'))];
+    R(j,:) = [dLag(j), sqrt(mean(e.^2, 'omitnan'))];
 end
 
 %% ==================== OUTPUT ====================
 fprintf('\n onset based on v_x   plateau thresholds %s, hold %.0f ms\n', ...
         mat2str(brkFrac*100), holdT*1e3);
-fprintf(' common samples = %d   (transient = %d, %.0f%%)\n', ...
-        nnz(common), nT(1), 100*nT(1)/max(1,nnz(common)));
+fprintf(' common samples = %d\n', nnz(common));
 fprintf(' valid maneuvers = %d   (events common to all lags: %s)\n\n', ...
         size(ev,1), mat2str(sum(okEv,1)));
 
-fprintf(' lag  delay[ms]   RMSE_all  RMSE_steady  RMSE_tran\n');
+fprintf(' lag  delay[ms]       RMSE\n');
 fprintf('      (0 ms = lag 1)\n');
 for j = 1:nLag
     if isfinite(R(j,1))
-        fprintf('%4d  %8.0f   %8.3f   %9.3f  %9.3f\n', j-1, R(j,:));
+        fprintf('%4d  %8.0f   %8.3f\n', j-1, R(j,:));
     end
 end
 
@@ -251,12 +241,10 @@ end
 xlabel('time [s]'); ylabel('v_x [m/s]');
 legend('Location', 'eastoutside'); title(sprintf('Per-lag smoothing - slot %d', sl));
 
-%% ==================== FIGURE 2: REGIMES, EVENTS, AND GT ONSET ====================
-isTr = abs(aGtCls) > aThr;
+%% ==================== FIGURE 2: EVENTS AND GT ONSET ====================
 figure('Color','w');
 axC1 = subplot(2,1,1); hold on; grid on;
 plot(gtTu, gtVu, 'k-', 'DisplayName', 'GT');
-plot(gtTu(isTr), gtVu(isTr), 'r.', 'MarkerSize', 8, 'DisplayName', 'transient');
 for m = 1:size(ev,1)
     xline(ev(m,1), 'b:', 'LineWidth', 1.0, 'HandleVisibility', 'off');
     if isfinite(tBrkGt(m,1))
@@ -268,25 +256,17 @@ title(sprintf('%d maneuvers   (blue = event, green = GT onset at %.0f%%)', ...
       size(ev,1), brkFrac(1)*100));
 
 axC2 = subplot(2,1,2); hold on; grid on;
-plot(gtTu, aGtCls, 'Color', [0.85 0.20 0.10], ...
-     'DisplayName', sprintf('dv/dt smooth %.2fs (regime)', wSmooth));
-plot(gtTu, aGtEv,  'Color', [0.10 0.55 0.85], 'LineWidth', 1.4, ...
+plot(gtTu, aGtEv, 'Color', [0.10 0.55 0.85], 'LineWidth', 1.4, ...
      'DisplayName', sprintf('dv/dt smooth %.2fs (events)', wSmoothEv));
 yline( aOn, 'g:', 'HandleVisibility', 'off');
 yline(-aOn, 'g:', 'HandleVisibility', 'off');
-yline( aThr, ':', 'HandleVisibility', 'off');
-yline(-aThr, ':', 'HandleVisibility', 'off');
 xlabel('time [s]'); ylabel('a_x [m/s^2]'); legend('Location', 'best');
 
-%% ==================== FIGURE 3: RMSE BY REGIME ====================
+%% ==================== FIGURE 3: RMSE ====================
 figure('Color','w'); axR1 = axes; hold on; grid on;
-plot(R(:,1), R(:,2), 'ko-', 'LineWidth', 1.2, 'DisplayName', 'all');
-plot(R(:,1), R(:,3), 'o-',  'LineWidth', 1.6, 'Color', [0.10 0.55 0.25], ...
-     'DisplayName', 'steady-state');
-plot(R(:,1), R(:,4), 's-',  'LineWidth', 1.6, 'Color', [0.85 0.20 0.10], ...
-     'DisplayName', 'transient');
+plot(R(:,1), R(:,2), 'ko-', 'LineWidth', 1.2);
 xlabel('delay [ms]  (0 ms = lag 1)'); ylabel('RMSE v_x [m/s]');
-legend('Location', 'best'); title('RMSE vs GT(t-d) by regime');
+title('RMSE vs GT(t-d)');
 
 %% ==================== FIGURE 4: DELAY ANALYSIS ====================
 figure('Color','w'); axA = axes; hold on; grid on;
