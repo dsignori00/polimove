@@ -2,24 +2,46 @@
 %  Lag/latency analysis of opponent tracking - v_x only
 %
 %  Break point (maneuver onset), based on velocity:
-%    tbreak = min{ t : dir*(v(t) - v0) > frac*|v0|  for at least holdT }
+%    tbreak = min{ t : dir*(v(t) - v0) > frac*|v0|  sustained for holdT }
 %    dOnset = tbreak,estimated - tbreak,GT     (+ = DELAY, - = lead)
 %
-%  GT and estimate are the SAME quantity, on the SAME uniform grid, with
-%  the SAME v0 plateau and the SAME relative threshold: the comparison is
-%  symmetric by construction, with no bandwidth or noise compensation.
+%  FIXES vs the previous version
+%  -----------------------------
+%  (1) SYMMETRIC PLATEAU.  v0 is now computed independently on EACH series
+%      over its OWN pre-event window.  Previously the GT plateau was reused
+%      for the estimate, so any static bias of the estimate on the plateau
+%      ate into the threshold budget and made the low-threshold detector
+%      fire early in a systematic way.
+%
+%  (2) PERSISTENCE ON NATIVE SAMPLES.  The hold test used to run on the
+%      uniform dtU grid: 4 interpolated samples on GT = 80 ms of real data,
+%      but on a per-lag series with a ~60-130 ms native step the same 4
+%      samples were the linear ramp between two real points, so a single
+%      noisy sample passed the test.  The test now runs on the native
+%      samples of each series over a real duration holdT, with at least
+%      minPts real samples inside the window.  The returned instant is
+%      refined by linear interpolation between the two samples straddling
+%      the threshold, so it does not inherit the sampling step.
+%
+%  (3) REACHABLE THRESHOLDS.  Events whose GT excursion does not clear the
+%      LARGEST threshold with margin are discarded, so every threshold sees
+%      the same maneuver population (minDv alone did not guarantee this).
+%
+%  (4) THRESHOLD SWEEP.  brkFrac accepts any number of values: if the
+%      measured delay grows with the threshold and then saturates, the
+%      saturation value is the true group delay; a low threshold measures
+%      "something moved", a high one measures "the amplitude was
+%      recovered".  Default here is 2% and 5%.
+%
+%  (5) BUFFER-AGE ANCHOR.  rebaseLag1 = false by default: 0 ms is now lag 0,
+%      the freshest, purely causal sample.  Older buffer entries have been
+%      re-smoothed with later measurements, which is why they "lead" GT, so
+%      lag 0 must be the point of MAXIMUM delay.  A curve that is not
+%      monotonically decreasing with buffer age is a detector artifact, not
+%      physics.  Set rebaseLag1 = true to restore the previous axis.
 %
 %  Acceleration is used only as the smoothed derivative of v_x to segment
 %  maneuvers.
-%
-%  NOTE on the buffer-age axis (dLag): the 0 ms reference point is
-%  anchored to lag 1 (not lag 0). dLag is rebased right after its
-%  computation by subtracting dLag(2) (= lag 1, since col = N-(0:nLag-1)
-%  and the printed label is j-1) from every entry. Lag 0, being fresher
-%  than lag 1, therefore reads a small NEGATIVE buffer age after the
-%  rebase. This only affects the displayed/printed buffer-age values
-%  (table, Figure 3, Figure 4); it does not change tnow/lr, the masks,
-%  or the onset-delay (dOnset) computation, which are unaffected.
 % ====================================================================
 
 %% ==================== PARAMETERS ====================
@@ -29,6 +51,7 @@ nLag      = 15;                   % number of lags to analyze
 gapMax    = 0.30;                 % s: gap above which plotted lines are split
 useStamp  = false;                % true = lag 0 at the publication timestamp
 dtU       = 0.02;                 % s: uniform working-grid step
+rebaseLag1 = false;               % false = 0 ms is lag 0 (see note 6 above)
 
 % --- v_x derivative (maneuver segmentation) ---
 wSmoothEv = 0.50;                 % s: smoothing for maneuver segmentation
@@ -38,9 +61,13 @@ minGapEv  = 0.30;                 % s: closer events are merged
 
 % --- onset based on v_x ---
 brkFrac   = [0.02 0.05];          % break thresholds, fraction of the |v0| plateau
+                                  % add e.g. 0.10 0.20 to check for saturation
 holdT     = 0.08;                 % s: required persistence (60-100 ms)
-preWin    = 1.00;                 % s: margin before the event for onset detection
+minPts    = 2;                    % native samples required inside the hold window
+preWin    = 1.00;                 % s: margin before the event, and plateau window
+minPre    = 3;                    % native samples required in the plateau window
 minDv     = 1.0;                  % m/s: minimum v_x change required to validate a maneuver
+ampMargin = 1.5;                  % excursion must exceed ampMargin*max(brkFrac)*|v0|
 useCommon = true;                 % true = statistics only on events valid for ALL lags
 
 %% ==================== BUFFER EXTRACTION ====================
@@ -88,12 +115,19 @@ for j = 1:nLag
     if any(M(:,j)), dLag(j) = median(L(M(:,j), j)) * 1e3; end
 end
 
-% --- rebase buffer-age axis: 0 ms reference = lag 1 (not lag 0) ---
-if nLag >= 2 && isfinite(dLag(2))
-    dLag = dLag - dLag(2);
+if rebaseLag1 && nLag >= 2 && isfinite(dLag(2))
+    dLag = dLag - dLag(2);              % legacy axis: 0 ms = lag 1
 end
+lagRefTxt = '0 ms = lag 0';
+if rebaseLag1, lagRefTxt = '0 ms = lag 1'; end
 
 SS = buildLagSeries(V, T, M, col, tnow);   % estimated v_x series, by lag
+
+% native sampling step of each lag series (diagnostic: hold-test resolution)
+dtNat = nan(nLag,1);
+for j = 1:nLag
+    if ~isempty(SS{j}) && size(SS{j},1) > 2, dtNat(j) = median(diff(SS{j}(:,1))); end
+end
 
 %% ==================== GROUND TRUTH ====================
 gtT = double(gt.stamp) - t0;  gtV = double(gt.vx);
@@ -108,72 +142,99 @@ ev    = detectEvents(gtTu, aGtEv, aOn, aOff, minGapEv);
 dirEv = nan(size(ev,1),1);
 v0Ev  = nan(size(ev,1),1);
 
+nRejAmp = 0;  nRejThr = 0;
 if ~isempty(ev)
     keepEv = true(size(ev,1),1);
     for m = 1:size(ev,1)
         idx = gtTu >= ev(m,1) & gtTu <= ev(m,2);
-        if nnz(idx) < 3 || (max(gtVu(idx)) - min(gtVu(idx))) < minDv
-            keepEv(m) = false;  continue;
+        pre = gtTu >= ev(m,1) - preWin & gtTu < ev(m,1);
+        if nnz(idx) < 3 || nnz(pre) < minPre
+            keepEv(m) = false;  nRejAmp = nRejAmp + 1;  continue;
         end
-        pre  = gtTu >= ev(m,1) - preWin & gtTu < ev(m,1);
-        vEnd = median(gtVu(gtTu > ev(m,2) - 0.2 & gtTu <= ev(m,2)), 'omitnan');
+        vEnd     = median(gtVu(gtTu > ev(m,2) - 0.2 & gtTu <= ev(m,2)), 'omitnan');
         v0Ev(m)  = median(gtVu(pre), 'omitnan');
         dirEv(m) = sign(vEnd - v0Ev(m));
         if ~isfinite(dirEv(m)) || dirEv(m) == 0 || ~isfinite(v0Ev(m))
-            keepEv(m) = false;
+            keepEv(m) = false;  nRejAmp = nRejAmp + 1;  continue;
+        end
+        % excursion must be large enough for EVERY threshold to be reachable
+        exc = max(dirEv(m) * (gtVu(idx) - v0Ev(m)));
+        if ~isfinite(exc) || exc < minDv
+            keepEv(m) = false;  nRejAmp = nRejAmp + 1;  continue;
+        end
+        if exc < ampMargin * max(brkFrac) * abs(v0Ev(m))
+            keepEv(m) = false;  nRejThr = nRejThr + 1;  continue;
         end
     end
-    fprintf(' events detected: %d, discarded (Delta v < %.1f m/s or zero direction): %d\n', ...
-            numel(keepEv), minDv, nnz(~keepEv));
+    fprintf(' events detected: %d   discarded: %d (Delta v < %.1f m/s or bad direction), %d (excursion below %.0f%% threshold margin)\n', ...
+            numel(keepEv), nRejAmp, minDv, nRejThr, max(brkFrac)*100);
     ev = ev(keepEv,:);  dirEv = dirEv(keepEv);  v0Ev = v0Ev(keepEv);
 end
 
+nEv = size(ev,1);
+nF  = numel(brkFrac);
+
 %% ==================== ONSET BASED ON v_x ====================
-nH = max(2, round(holdT/dtU));
-nF = numel(brkFrac);
+tBrkGt  = nan(nEv, nF);
+tBrkEst = nan(nEv, nLag, nF);
+v0Est   = nan(nEv, nLag);        % per-series plateau (diagnostic: static bias)
 
-tBrkGt  = nan(size(ev,1), nF);
-tBrkEst = nan(size(ev,1), nLag, nF);
+for m = 1:nEv
+    tA = ev(m,1) - preWin;  tB = ev(m,2);
 
-for m = 1:size(ev,1)
-    tu = (ev(m,1) - preWin : dtU : ev(m,2))';
-    yg = interp1(gtTu, gtVu, tu, 'linear', NaN);
-    if nnz(isfinite(yg)) < 10, continue; end
-
+    % --- GT, on its own native grid ---
+    gsel = gtTu >= tA & gtTu <= tB;
+    tg = gtTu(gsel);  yg = gtVu(gsel);
+    if numel(tg) < 10, continue; end
+    v0g = plateauV(tg, yg, tA, ev(m,1), minPre);
+    if ~isfinite(v0g), continue; end
     for f = 1:nF
-        tBrkGt(m,f) = breakVx(tu, yg, v0Ev(m), dirEv(m), brkFrac(f), nH);
+        tBrkGt(m,f) = breakVxT(tg, yg, v0g, dirEv(m), brkFrac(f), holdT, minPts, tA);
     end
     if all(isnan(tBrkGt(m,:))), continue; end
 
+    % --- estimate, on its own native grid, with its own plateau ---
     for j = 1:nLag
         if isempty(SS{j}), continue; end
-        tt = SS{j}(:,1);
-        if tt(1) > tu(1) || tt(end) < tu(end), continue; end
-        ye = interp1(tt, SS{j}(:,2), tu, 'linear', NaN);
-        if nnz(isfinite(ye)) < 0.8*numel(tu), continue; end
+        tt = SS{j}(:,1);  yy = SS{j}(:,2);
+        if tt(1) > tA || tt(end) < tB, continue; end          % window covered
+        esel = tt >= tA & tt <= tB;
+        te = tt(esel);  ye = yy(esel);
+        if numel(te) < max(6, minPre + minPts), continue; end
+        v0e = plateauV(te, ye, tA, ev(m,1), minPre);
+        if ~isfinite(v0e), continue; end
+        v0Est(m,j) = v0e;
         for f = 1:nF
-            tBrkEst(m,j,f) = breakVx(tu, ye, v0Ev(m), dirEv(m), brkFrac(f), nH);
+            tBrkEst(m,j,f) = breakVxT(te, ye, v0e, dirEv(m), brkFrac(f), holdT, minPts, tA);
         end
     end
 end
 
-dOnset = (tBrkEst - reshape(tBrkGt, size(tBrkGt,1), 1, nF)) * 1e3;   % ms; + = delay, - = lead
+dOnset = (tBrkEst - reshape(tBrkGt, nEv, 1, nF)) * 1e3;   % ms; + = delay, - = lead
 
 %% ==================== COMMON EVENT SET ====================
 % Without this, each lag would have a different maneuver population and
 % the medians would not be comparable.
-okEv = squeeze(all(isfinite(dOnset), 2));   % [nEv x nF]
+okEv = reshape(all(isfinite(dOnset), 2), nEv, nF);
 if useCommon
     for f = 1:nF
-        bad = ~okEv(:,f);
-        dOnset(bad,:,f) = NaN;
+        dOnset(~okEv(:,f), :, f) = NaN;
     end
 end
 
 Dmed = nan(nLag, nF);
-nOn = zeros(nLag, nF);
+nOn  = zeros(nLag, nF);
 for f = 1:nF
     [Dmed(:,f), nOn(:,f)] = lagStats(dOnset(:,:,f), nLag);
+end
+
+% static plateau bias of the estimate, in units of the smallest threshold:
+% if this is not << 1 the low-threshold onset is not trustworthy
+biasV = nan(nLag,1);
+for j = 1:nLag
+    d = dirEv .* (v0Est(:,j) - v0Ev);
+    d = d(isfinite(d));
+    if ~isempty(d), biasV(j) = median(d); end
 end
 
 %% ==================== RMSE vs GT(t-d) ====================
@@ -183,7 +244,7 @@ for j = 1:nLag
     common = common & T(:,c) >= gtTu(1) & T(:,c) <= gtTu(end);
 end
 
-R = nan(nLag, 2);   % [delay, RMSE]
+R = nan(nLag, 2);   % [buffer age, RMSE]
 for j = 1:nLag
     c = col(j);
     if nnz(common) < 10, continue; end
@@ -193,32 +254,35 @@ for j = 1:nLag
 end
 
 %% ==================== OUTPUT ====================
-fprintf('\n onset based on v_x   plateau thresholds %s, hold %.0f ms\n', ...
-        mat2str(brkFrac*100), holdT*1e3);
+fprintf('\n onset based on v_x   plateau thresholds %s%%, hold %.0f ms on native samples (min %d)\n', ...
+        mat2str(brkFrac*100), holdT*1e3, minPts);
 fprintf(' common samples = %d\n', nnz(common));
-fprintf(' valid maneuvers = %d   (events common to all lags: %s)\n\n', ...
-        size(ev,1), mat2str(sum(okEv,1)));
+fprintf(' valid maneuvers = %d   (events common to all lags, per threshold: %s)\n\n', ...
+        nEv, mat2str(sum(okEv,1)));
 
-fprintf(' lag  delay[ms]       RMSE\n');
-fprintf('      (0 ms = lag 1)\n');
+fprintf(' lag  bufAge[ms]      RMSE   dtNative[ms]   plateauBias[m/s]\n');
+fprintf('      (%s)\n', lagRefTxt);
 for j = 1:nLag
     if isfinite(R(j,1))
-        fprintf('%4d  %8.0f   %8.3f\n', j-1, R(j,:));
+        fprintf('%4d  %9.0f  %8.3f  %10.0f  %15.3f\n', ...
+                j-1, R(j,1), R(j,2), dtNat(j)*1e3, biasV(j));
     end
 end
 
 fprintf('\n onset delay [ms]   (+ = LAGGING GT, - = leading)\n');
-fprintf(' lag  delay[ms]');
-for f = 1:nF, fprintf('     %.0f%%_median    n', brkFrac(f)*100); end
+fprintf(' lag  bufAge[ms]');
+for f = 1:nF, fprintf('   %4.0f%%_med    n', brkFrac(f)*100); end
 fprintf('\n');
 for j = 1:nLag
     if ~isfinite(dLag(j)), continue; end
-    fprintf('%4d  %8.0f', j-1, dLag(j));
+    fprintf('%4d  %9.0f', j-1, dLag(j));
     for f = 1:nF
-        fprintf('  %+11.0f %4d', Dmed(j,f), nOn(j,f));
+        fprintf('  %+9.0f %4d', Dmed(j,f), nOn(j,f));
     end
     fprintf('\n');
 end
+fprintf('\n If the per-threshold delay grows with the threshold and then saturates,\n');
+fprintf(' the saturation value is the true group delay.\n');
 
 %% ==================== FIGURE 1: v_x BY LAG ====================
 cm = turbo(nLag);
@@ -245,7 +309,7 @@ legend('Location', 'eastoutside'); title(sprintf('Per-lag smoothing - slot %d', 
 figure('Color','w');
 axC1 = subplot(2,1,1); hold on; grid on;
 plot(gtTu, gtVu, 'k-', 'DisplayName', 'GT');
-for m = 1:size(ev,1)
+for m = 1:nEv
     xline(ev(m,1), 'b:', 'LineWidth', 1.0, 'HandleVisibility', 'off');
     if isfinite(tBrkGt(m,1))
         xline(tBrkGt(m,1), 'g-', 'LineWidth', 1.0, 'HandleVisibility', 'off');
@@ -253,7 +317,7 @@ for m = 1:size(ev,1)
 end
 ylabel('v_x [m/s]'); legend('Location', 'best');
 title(sprintf('%d maneuvers   (blue = event, green = GT onset at %.0f%%)', ...
-      size(ev,1), brkFrac(1)*100));
+      nEv, brkFrac(1)*100));
 
 axC2 = subplot(2,1,2); hold on; grid on;
 plot(gtTu, aGtEv, 'Color', [0.10 0.55 0.85], 'LineWidth', 1.4, ...
@@ -265,25 +329,25 @@ xlabel('time [s]'); ylabel('a_x [m/s^2]'); legend('Location', 'best');
 %% ==================== FIGURE 3: RMSE ====================
 figure('Color','w'); axR1 = axes; hold on; grid on;
 plot(R(:,1), R(:,2), 'ko-', 'LineWidth', 1.2);
-xlabel('delay [ms]  (0 ms = lag 1)'); ylabel('RMSE v_x [m/s]');
+xlabel(sprintf('buffer age [ms]  (%s)', lagRefTxt)); ylabel('RMSE v_x [m/s]');
 title('RMSE vs GT(t-d)');
 
 %% ==================== FIGURE 4: DELAY ANALYSIS ====================
 figure('Color','w'); axA = axes; hold on; grid on;
-cf = [0.00 0.45 0.74; 0.85 0.33 0.10];
+cf = [0.00 0.45 0.74; 0.85 0.33 0.10; lines(max(0, nF-2))];
 for f = 1:nF
-    plot(dLag, Dmed(:,f), 'o-', ...
-        'LineWidth', 1.5, 'Color', cf(min(f,2),:), ...
+    plot(dLag, Dmed(:,f), 'o-', 'LineWidth', 1.4, 'Color', cf(f,:), ...
         'DisplayName', sprintf('threshold %.0f%%', brkFrac(f)*100));
 end
 yline(0, 'k-', 'LineWidth', 0.8, 'HandleVisibility', 'off');
-xlabel('buffer age [ms]  (0 ms = lag 1)'); ylabel('onset delay [ms]   (+ = delay, - = lead)');
+xlabel(sprintf('buffer age [ms]  (%s)', lagRefTxt));
+ylabel('onset delay [ms]   (+ = delay, - = lead)');
 legend('Location', 'best');
 title('Delay Analysis');
 
 %% ==================== AXIS SYNCHRONIZATION ====================
 linkaxes([axLag axC1 axC2], 'x');   % time axis
-linkaxes([axR1 axA], 'x');          % delay/buffer-age axis
+linkaxes([axR1 axA], 'x');          % buffer-age axis
 
 
 %% ==================== LOCAL FUNCTIONS ====================
@@ -339,13 +403,42 @@ function ev = detectEvents(t, x, aOn, aOff, minGap)
     end
 end
 
-function tb = breakVx(tu, y, v0, dirS, frac, nH)
-% First instant when the deviation from the v0 plateau exceeds frac*|v0|
-% in direction dirS and persists for nH consecutive samples.
-    cnd = (y - v0) * dirS > frac * abs(v0);
-    cnd(~isfinite(y)) = false;
-    i = find(movsum(cnd, [0 nH-1]) == nH, 1);
-    if isempty(i), tb = NaN; else, tb = tu(i); end
+function v0 = plateauV(t, y, tA, tB, minPre)
+% Pre-event plateau of a series, on its OWN samples in [tA, tB).
+    v0  = NaN;
+    idx = t >= tA & t < tB & isfinite(y);
+    if nnz(idx) >= minPre, v0 = median(y(idx), 'omitnan'); end
+end
+
+function tb = breakVxT(t, y, v0, dirS, frac, holdT, minPts, tStart)
+% First instant when the deviation from the v0 plateau exceeds frac*|v0| in
+% direction dirS and stays above for holdT of REAL time, checked on the
+% native samples of the series, with at least minPts samples inside the
+% window.  The instant is refined by linear interpolation between the two
+% samples straddling the threshold, so it is independent of the sampling
+% step of the series (GT and estimate are therefore comparable even though
+% their native rates differ by an order of magnitude).
+    tb  = NaN;
+    lev = frac * abs(v0);
+    d   = (y - v0) * dirS;
+    n   = numel(t);
+    for i = 1:n
+        if ~isfinite(d(i)) || d(i) <= lev || t(i) < tStart, continue; end
+        jEnd = find(t <= t(i) + holdT, 1, 'last');
+        jEnd = max(jEnd, min(i + minPts - 1, n));
+        if jEnd >= n && t(n) < t(i) + holdT
+            return;                       % not enough data left to confirm
+        end
+        seg = d(i:jEnd);
+        if all(isfinite(seg)) && all(seg > lev)
+            if i > 1 && isfinite(d(i-1)) && d(i-1) <= lev && d(i) > d(i-1)
+                tb = t(i-1) + (lev - d(i-1)) * (t(i) - t(i-1)) / (d(i) - d(i-1));
+            else
+                tb = t(i);
+            end
+            return;
+        end
+    end
 end
 
 function [Q, n] = lagStats(D, nLag)

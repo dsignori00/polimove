@@ -7,7 +7,10 @@
 % history anche di log_2 / log_3 (un colore per log). I log privi di
 % 'perception__opponents_history' vengono saltati con un avviso.
 %
-% SPAZIO/-> avanti | <- indietro | P play/pausa | +/- velocita' | HOME | q/ESC chiude.
+% SPAZIO/-> avanti | <- indietro | P play/pausa | +/- velocita' | G vai a tempo | HOME | q/ESC chiude.
+%
+% L'istante di partenza si imposta con 'rls_tStart' (tempo relativo, stesso
+% asse x del plot); HOME riporta a quell'istante.
 %
 % SCRIPT (non function): si lancia da main senza argomenti, legge 'log',
 % 'log_2', 'log_3', 'gt', 'rad_clust', 'col', 'name1..3' dal workspace.
@@ -19,6 +22,7 @@ rls_win     = 10;      % s, larghezza finestra scorrevole
 rls_cosMin  = 0.15;   % |cos(aspect)| minimo per le misure radar
 rls_rhoSign = 1;      % segno rho_dot
 rls_radarVx = false;   % overlay misure radar rho_dot->vx
+rls_tStart  = [714];     % s (tempo relativo): istante da cui partire. [] = primo frame utile
 
 rls_field = 'vx';
 rls_f = ['opponents__' rls_field];
@@ -213,8 +217,16 @@ ylabel(rls_ax, 'v_x [m/s]');
 legend(rls_ax, 'Location', 'best');
 
 % ---------- stato ----------
+% primo frame con buffer non vuoto
 rls_startI = find(rls_hist(1).nv > 0, 1);
 if isempty(rls_startI), rls_startI = 1; end
+
+% se richiesto, si parte dall'istante rls_tStart: riga del log primario
+% con 'now' piu' vicino, mai prima del primo frame utile
+if ~isempty(rls_tStart) && isfinite(rls_tStart)
+    rls_iStart = rls_nearest_row(rls_hist(1).now, rls_tStart);
+    rls_startI = max(rls_startI, rls_iStart);
+end
 
 rls_st.hist = rls_hist;
 rls_st.n = rls_hist(1).n;   % il frame avanza sulle righe del log primario
@@ -235,7 +247,7 @@ clear rls_k rls_r rls_Lk rls_ohk rls_idsk rls_nk rls_nvk rls_Vk rls_Tk rls_stk r
 clear rls_raw rls_oppk rls_gtT rls_gtV rls_vxMeasV rls_vxMeasTs rls_vxMeasTa rls_st
 clear rls_s rls_rd rls_xr rls_yr rls_yawr rls_beta rls_aspect rls_c rls_teRaw
 clear rls_egoVxAll rls_egoValid rls_sensStamp rls_arrStamp rls_vegoI rls_vxAll rls_goodMeas
-clear rls_logs rls_names rls_cols rls_shifts rls_f rls_field rls_hist
+clear rls_logs rls_names rls_cols rls_shifts rls_f rls_field rls_hist rls_iStart
 
 % ---------- callback ----------
 function rls_draw_tick(fig)
@@ -269,6 +281,17 @@ switch evt.Key
             stop(s.timer); s.playing = false;
         else
             start(s.timer); s.playing = true;
+        end
+    case 'g'
+        % salto a un istante arbitrario (tempo relativo, come l'asse x)
+        if s.playing, stop(s.timer); s.playing = false; end
+        def = sprintf('%.3f', s.hist(1).now(min(s.i, s.hist(1).n)));
+        answer = inputdlg('Istante relativo [s]:', 'Vai a tempo', 1, {def});
+        if ~isempty(answer)
+            tgt = str2double(answer{1});
+            if isfinite(tgt)
+                s.i = rls_nearest_row(s.hist(1).now, tgt);
+            end
         end
     case {'add', 'equal'}
         s.period = max(0.005, s.period / 1.5); s.timer.Period = s.period;
