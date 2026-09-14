@@ -5,7 +5,7 @@ link_axes_mode = 'all'; % 'none', 'figure', or 'all'
 
 use_ref     = true;
 use_sim_ref = false;
-compare     = true;
+compare     = false;
 compare2    = false;
 
 opp_idx     = 1;
@@ -175,6 +175,6 @@ end
 %latency_delay;
 %outlier_analysis;
 %rts_sens_analysis
-rts
+%rts
 
 link_axes();

@@ -40,6 +40,11 @@
 %      monotonically decreasing with buffer age is a detector artifact, not
 %      physics.  Set rebaseLag1 = true to restore the previous axis.
 %
+%  (6) TIME WINDOW SELECTION.  A new section lets you restrict the analysis
+%      (maneuver events + RMSE) to a chosen time range, after showing you
+%      the full list of detected maneuvers so you can pick one on data,
+%      not by guessing. See "TIME WINDOW SELECTION" below.
+%
 %  Acceleration is used only as the smoothed derivative of v_x to segment
 %  maneuvers.
 % ====================================================================
@@ -51,7 +56,7 @@ nLag      = 15;                   % number of lags to analyze
 gapMax    = 0.30;                 % s: gap above which plotted lines are split
 useStamp  = false;                % true = lag 0 at the publication timestamp
 dtU       = 0.02;                 % s: uniform working-grid step
-rebaseLag1 = false;               % false = 0 ms is lag 0 (see note 6 above)
+rebaseLag1 = true;                % true = 0 ms is lag 1 (legacy axis)
 
 % --- v_x derivative (maneuver segmentation) ---
 wSmoothEv = 0.50;                 % s: smoothing for maneuver segmentation
@@ -69,6 +74,10 @@ minPre    = 3;                    % native samples required in the plateau windo
 minDv     = 1.0;                  % m/s: minimum v_x change required to validate a maneuver
 ampMargin = 1.5;                  % excursion must exceed ampMargin*max(brkFrac)*|v0|
 useCommon = true;                 % true = statistics only on events valid for ALL lags
+
+% --- time window (see "TIME WINDOW SELECTION" section below) ---
+TIME_WINDOW = [500 1400];                 % e.g. [40 90]; relative seconds, same axis as
+                                  % gtTu/plots. Empty = use the whole log.
 
 %% ==================== BUFFER EXTRACTION ====================
 oh = log.perception__opponents_history;
@@ -171,7 +180,37 @@ if ~isempty(ev)
     ev = ev(keepEv,:);  dirEv = dirEv(keepEv);  v0Ev = v0Ev(keepEv);
 end
 
+%% ==================== TIME WINDOW SELECTION ====================
+% Shows every maneuver event survived the filters above, with its time
+% span and direction, plus the full span of the log. Use this listing to
+% choose TIME_WINDOW (set it in PARAMETERS, or edit it here and re-run
+% from this section onward) before committing to the onset/RMSE analysis.
+%
+% Rationale: onset delay and RMSE are computed only from data inside
+% TIME_WINDOW. This matters because different portions of a run can have
+% very different tracking behaviour (e.g. a clean straight vs a chaotic
+% overtake); mixing them into one median can hide or invent an effect
+% that is really tied to one specific maneuver.
+fprintf('\n=== AVAILABLE MANEUVER EVENTS (for TIME_WINDOW selection) ===\n');
+fprintf('%4s %10s %10s %10s %8s\n', '#', 't_start[s]', 't_end[s]', 'dur[s]', 'dir');
+for m = 1:size(ev,1)
+    fprintf('%4d %10.2f %10.2f %10.2f %8+d\n', m, ev(m,1), ev(m,2), ev(m,2)-ev(m,1), dirEv(m));
+end
+fprintf('Full log span: [%.2f , %.2f] s\n', gtTu(1), gtTu(end));
+
+if ~isempty(TIME_WINDOW)
+    keepWin = ev(:,1) >= TIME_WINDOW(1) & ev(:,2) <= TIME_WINDOW(2);
+    fprintf('TIME_WINDOW = [%.2f %.2f] s -> keeping %d of %d events\n', ...
+        TIME_WINDOW(1), TIME_WINDOW(2), nnz(keepWin), numel(keepWin));
+    ev = ev(keepWin,:);  dirEv = dirEv(keepWin);  v0Ev = v0Ev(keepWin);
+else
+    fprintf('TIME_WINDOW empty -> using the whole log (%d events).\n', size(ev,1));
+end
+
 nEv = size(ev,1);
+if nEv == 0
+    error('cpr: no maneuver events left after TIME_WINDOW - widen it or set it to [].');
+end
 nF  = numel(brkFrac);
 
 %% ==================== ONSET BASED ON v_x ====================
@@ -239,6 +278,9 @@ end
 
 %% ==================== RMSE vs GT(t-d) ====================
 common = all(M, 2) & isfinite(tnow);
+if ~isempty(TIME_WINDOW)
+    common = common & tnow >= TIME_WINDOW(1) & tnow <= TIME_WINDOW(2);
+end
 for j = 1:nLag
     c = col(j);
     common = common & T(:,c) >= gtTu(1) & T(:,c) <= gtTu(end);
@@ -256,6 +298,9 @@ end
 %% ==================== OUTPUT ====================
 fprintf('\n onset based on v_x   plateau thresholds %s%%, hold %.0f ms on native samples (min %d)\n', ...
         mat2str(brkFrac*100), holdT*1e3, minPts);
+if ~isempty(TIME_WINDOW)
+    fprintf(' time window = [%.2f %.2f] s\n', TIME_WINDOW(1), TIME_WINDOW(2));
+end
 fprintf(' common samples = %d\n', nnz(common));
 fprintf(' valid maneuvers = %d   (events common to all lags, per threshold: %s)\n\n', ...
         nEv, mat2str(sum(okEv,1)));
@@ -301,6 +346,10 @@ for j = 1:nLag
     else,      cc = cm(j,:);          lw = 1.0;  end
     plot(x, y, '-', 'Color', cc, 'LineWidth', lw, ...
          'DisplayName', sprintf('lag %d  (%.0f ms)', j-1, dLag(j)));
+end
+if ~isempty(TIME_WINDOW)
+    xline(TIME_WINDOW(1), 'k--', 'HandleVisibility', 'off');
+    xline(TIME_WINDOW(2), 'k--', 'HandleVisibility', 'off');
 end
 xlabel('time [s]'); ylabel('v_x [m/s]');
 legend('Location', 'eastoutside'); title(sprintf('Per-lag smoothing - slot %d', sl));
