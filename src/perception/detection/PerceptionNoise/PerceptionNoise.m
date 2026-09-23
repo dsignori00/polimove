@@ -108,13 +108,13 @@ process_measures;
 
 %% PLOTTING
 
-l%atency;
+%latency;
 %time_series_map;
 %time_series_cog;
 %time_series_range;
 %time_series_errors;
 % correlations;
-fit_gaussian;
+%fit_gaussian;
 %error_summary;
 %sensors_fov;
 %map;
