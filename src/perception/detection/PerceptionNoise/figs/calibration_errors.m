@@ -5,7 +5,10 @@
 %
 % Yaw misalignment (dpsi) estimated from the lateral error model:
 %   ey = TY + tan(dpsi) * x_rel
-% 
+% (TY = lateral offset, byproduct of the fit)
+%
+% Figure: lateral error vs longitudinal distance
+%   2) longitudinal error vs time
 
 %% CONFIG
 K_SENS_LIST = [1 2];
@@ -18,7 +21,7 @@ T_FIELD   = 'sens_stamp';   % GT interpolation time: 'sens_stamp' | 'stamp'
 MAX_GAP_S = 0.2;            % max distance from nearest GT sample [s]
 DEDUP_TOL = 1e-3;           % duplicate tolerance [s]
 
-if ~exist('err_thr','var') || isempty(err_thr), err_thr = 3.0; end
+if ~exist('err_thr','var') || isempty(err_thr), err_thr = 1.5; end
 if ~exist('f','var')       || isempty(f),       f = 1; end
 
 if ~exist('sensors','var')
