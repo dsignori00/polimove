@@ -3,15 +3,9 @@
 %   - LiDAR Clustering
 %   - LiDAR PointPillars
 %
-% Estimated quantities:
-%
-%   TY     : lateral translation offset
-%   dpsi   : yaw misalignment
-%   TX     : longitudinal translation offset
-%
-% Figures:
-%   1) lateral error vs longitudinal distance
-%   2) longitudinal error vs time
+% Yaw misalignment (dpsi) estimated from the lateral error model:
+%   ey = TY + tan(dpsi) * x_rel
+% 
 
 %% CONFIG
 K_SENS_LIST = [1 2];
@@ -23,9 +17,8 @@ DISP_NAMES = { ...
 T_FIELD   = 'sens_stamp';   % GT interpolation time: 'sens_stamp' | 'stamp'
 MAX_GAP_S = 0.2;            % max distance from nearest GT sample [s]
 DEDUP_TOL = 1e-3;           % duplicate tolerance [s]
-TX_EST    = 'median';       % 'median' | 'mean'
 
-if ~exist('err_thr','var') || isempty(err_thr), err_thr = 1.5; end
+if ~exist('err_thr','var') || isempty(err_thr), err_thr = 3.0; end
 if ~exist('f','var')       || isempty(f),       f = 1; end
 
 if ~exist('sensors','var')
@@ -166,21 +159,6 @@ for i = K_SENS_LIST
     dpsi = atand(p(1));
 
 
-    % Longitudinal translation
-
-    switch lower(TX_EST)
-
-        case 'mean'
-            TX = mean(ex(ok),'omitnan');
-
-        case 'median'
-            TX = median(ex(ok),'omitnan');
-
-        otherwise
-            error('TX_EST must be ''mean'' or ''median''.');
-    end
-
-
     %% Console output
 
     fprintf('\n=== %s ===\n',name);
@@ -190,30 +168,26 @@ for i = K_SENS_LIST
         nnz(ok),numel(t),err_thr,MAX_GAP_S);
 
     fprintf( ...
-        'TY = %+.3f m | dpsi = %+.2f deg | TX = %+.3f m (%s)\n', ...
-        TY,dpsi,TX,TX_EST);
+        'dpsi = %+.3f deg | TY = %+.3f m\n', ...
+        dpsi,TY);
 
 
     %% Store results
 
-    RES{i}.t     = t;
     RES{i}.x_det = x_det;
-
-    RES{i}.ex = ex;
-    RES{i}.ey = ey;
+    RES{i}.ey    = ey;
 
     RES{i}.ok = ok;
 
     RES{i}.p     = p;
-    RES{i}.TX    = TX;
     RES{i}.TY    = TY;
-    RES{i}.dpsi = dpsi;
+    RES{i}.dpsi  = dpsi;
 
 end
 
 
 %% ============================================================
-% FIGURE 1
+% FIGURE
 % LATERAL ERROR VS LONGITUDINAL DISTANCE
 % ============================================================
 
@@ -272,7 +246,6 @@ for i = K_SENS_LIST
         'HandleVisibility','off');
 
 
-    xlabel('x relative [m]');
     ylabel('y error [m]');
 
     ylim([-1 1]);
@@ -290,68 +263,4 @@ for i = K_SENS_LIST
 
 end
 
-
-%% ============================================================
-% FIGURE 2
-% LONGITUDINAL ERROR VS TIME
-% ============================================================
-
-figure( ...
-    'Name','Extrinsic error - longitudinal', ...
-    'Color','w');
-
-tiledlayout( ...
-    numel(K_SENS_LIST),1, ...
-    'Padding','compact', ...
-    'TileSpacing','compact');
-
-
-for i = K_SENS_LIST
-
-    if isempty(RES{i})
-        continue
-    end
-
-    R = RES{i};
-
-    ax(f) = nexttile;
-    hold on
-    grid on
-    box on
-    f = f+1;
-
-
-    plot( ...
-        R.t(R.ok), ...
-        R.ex(R.ok), ...
-        '.', ...
-        'Color',sensors{i}.col, ...
-        'MarkerSize',6, ...
-        'DisplayName','Measurement error');
-
-
-    yline( ...
-        R.TX, ...
-        'k-', ...
-        'LineWidth',2, ...
-        'DisplayName',sprintf('T_X = %.3f m',R.TX));
-
-
-    yline( ...
-        0, ...
-        '--k', ...
-        'LineWidth',0.3, ...
-        'HandleVisibility','off');
-
-
-    ylabel('x error [m]');
-    ylim([-1 1]);
-    xlim([0 inf]);
-
-    title(DISP_NAMES{i});
-
-    legend('Location','northeast');
-
-end
-
-xlabel('timestamp [s]');
+xlabel('x relative [m]');

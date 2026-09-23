@@ -88,7 +88,7 @@ ego.speed = log.estimation.vx;
 
 % target tracking
 tt.stamp = log.perception__opponents.stamp__tot;
-tt.count = log.perception__opponents.count;
+%tt.count = log.perception__opponents.count;
 tt.max_opp = max(tt.count);
 
 
@@ -117,6 +117,7 @@ process_measures;
 %fit_gaussian;
 %error_summary;
 %sensors_fov;
+calibration_errors;
 %map;
 
 
