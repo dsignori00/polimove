@@ -20,6 +20,7 @@ rts_period = 0.1;    % s tra un frame e il successivo in play
 rts_cosMin = 0.15;   % |cos(aspect)| minimo per le misure radar
 rts_rhoSign = 1;     % segno rho_dot
 rts_causalLightening = 0.45; % 0 = colore history, 1 = bianco
+rts_smoothGapMax = 0.30;     % s, interrompe la curva smooth tra segmenti lontani
 if ~exist('rts_radarVx', 'var')
     rts_radarVx = false; % overlay misure radar rho_dot->vx
 end
@@ -147,7 +148,7 @@ for rts_k = 1:numel(rts_logs)
     % L'ultimo elemento valido nel buffer originale e' il campione piu'
     % vecchio, quindi quello che ha ricevuto il maggior numero di update RTS.
     [rts_smoothTk, rts_smoothVxk, rts_smoothAxk] = ...
-        rts_finalized_trace(rts_Tk, rts_Vxk, rts_Axk, rts_nvk);
+        rts_finalized_trace(rts_Tk, rts_Vxk, rts_Axk, rts_nvk, rts_smoothGapMax);
 
     rts_Vxk = rts_mask_history(rts_Vxk, rts_nvk);
     rts_Axk = rts_mask_history(rts_Axk, rts_nvk);
@@ -337,10 +338,10 @@ rts_hAx = gobjects(1, numel(rts_hist));
 for rts_k = 1:numel(rts_hist)
     plot(rts_axVx, rts_hist(rts_k).smoothT, rts_hist(rts_k).smoothVx, '-', ...
         'Color', rts_hist(rts_k).col, 'LineWidth', 1.5, ...
-        'DisplayName', sprintf('smooth complete %s', rts_hist(rts_k).name));
+        'HandleVisibility', 'off');
     plot(rts_axAx, rts_hist(rts_k).smoothT, rts_hist(rts_k).smoothAx, '-', ...
         'Color', rts_hist(rts_k).col, 'LineWidth', 1.5, ...
-        'DisplayName', sprintf('smooth complete %s', rts_hist(rts_k).name));
+        'HandleVisibility', 'off');
     rts_hVx(rts_k) = plot(rts_axVx, nan, nan, 'o-', ...
         'Color', rts_hist(rts_k).col, 'MarkerFaceColor', rts_hist(rts_k).col, ...
         'MarkerSize', 3, 'LineWidth', 1.2, ...
@@ -351,9 +352,9 @@ for rts_k = 1:numel(rts_hist)
         'DisplayName', sprintf('history %s', rts_hist(rts_k).name));
 end
 
-ylabel(rts_axVx, 'v_x [m/s]');
-ylabel(rts_axAx, 'a_x [m/s^2]');
-xlabel(rts_axAx, 'tempo relativo [s]');
+ylabel(rts_axVx, 'vx [m/s]');
+ylabel(rts_axAx, 'ax [m/s2]');
+xlabel(rts_axAx, 'timestamp [s]');
 legend(rts_axVx, 'Location', 'northwest');
 legend(rts_axAx, 'Location', 'northwest');
 linkaxes([rts_axVx rts_axAx], 'x');
@@ -504,7 +505,7 @@ if s.playing
 else
     status = 'pausa';
 end
-title(s.axVx, sprintf('frame %d/%d | replay %d:%d | slot#%d obs id=%d | %s', ...
+title(s.axVx, sprintf('frame %d/%d | replay %d:%d | slot %d | obs id %d | %s', ...
     s.i, s.n, firstFrame, lastFrame, s.slot, s.hist(1).ids(primaryIndex), status));
 drawnow limitrate;
 end
@@ -548,7 +549,8 @@ for row = 1:size(history, 1)
 end
 end
 
-function [time, vx, ax] = rts_finalized_trace(timeHistory, vxHistory, axHistory, validSteps)
+function [time, vx, ax] = rts_finalized_trace( ...
+        timeHistory, vxHistory, axHistory, validSteps, maximumGap)
 % Estrae da ogni snapshot l'ultimo campione valido del buffer originale.
 numberOfRows = size(timeHistory, 1);
 time = nan(numberOfRows, 1);
@@ -574,6 +576,23 @@ ax = ax(valid);
 vx = vx(finalRevision);
 ax = ax(finalRevision);
 vx(vx == 0) = NaN;
+
+% Impedisce a plot di collegare con rette campioni appartenenti a segmenti
+% temporali separati, come gia' accade nella curva causale in presenza di NaN.
+breakBefore = [false; diff(time) > maximumGap];
+if any(breakBefore)
+    outputIndex = (1:numel(time))' + cumsum(breakBefore);
+    outputLength = numel(time) + nnz(breakBefore);
+    timeWithGaps = nan(outputLength, 1);
+    vxWithGaps = nan(outputLength, 1);
+    axWithGaps = nan(outputLength, 1);
+    timeWithGaps(outputIndex) = time;
+    vxWithGaps(outputIndex) = vx;
+    axWithGaps(outputIndex) = ax;
+    time = timeWithGaps;
+    vx = vxWithGaps;
+    ax = axWithGaps;
+end
 end
 
 function index = rts_nearest_row(nowVector, referenceTime)
