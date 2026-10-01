@@ -1,10 +1,38 @@
 function fig = frustumViewer(streams, overlays, cfg)
 
-    timeline = streams(1).t;
+    %% Reference timeline
 
-    n_samples = numel(timeline);
-    selected_samples = 1:n_samples;
+    stream_names = string({streams.name});
+
+    reference_idx = find( ...
+        stream_names == string(cfg.reference_stream), ...
+        1, 'first');
+
+    if isempty(reference_idx)
+        error( ...
+            'FrustumViewer:MissingReferenceStream', ...
+            'Reference stream "%s" was not found. Available streams: %s', ...
+            cfg.reference_stream, ...
+            strjoin(stream_names, ', '));
+    end
+
+    % The whole viewer uses ONLY this stream as its timeline.
+    timeline = double(streams(reference_idx).t(:));
+
+    % Only valid timestamps from the reference stream are navigable.
+    selected_samples = find(isfinite(timeline));
+
+    if isempty(selected_samples)
+        error( ...
+            'FrustumViewer:EmptyReferenceTimeline', ...
+            'Reference stream "%s" contains no valid timestamps.', ...
+            cfg.reference_stream);
+    end
+
     selected_idx = 1;
+
+
+    %% Figure
 
     fig = figure( ...
         'Name', 'Frustum viewer', ...
@@ -30,6 +58,9 @@ function fig = frustumViewer(streams, overlays, cfg)
     xlabel(ax, 'x [m]');
     ylabel(ax, 'y [m]');
 
+
+    %% Point-cloud handles
+
     cloud_h = gobjects(numel(streams), 1);
 
     for i = 1:numel(streams)
@@ -50,20 +81,29 @@ function fig = frustumViewer(streams, overlays, cfg)
     legend(ax, 'Location', 'best');
 
 
+    %% Refresh selected time window
+
     function refreshTimeButtonPushed(~, ~)
 
         if ~isfield(cfg, 'time_axis') || ...
                 ~isgraphics(cfg.time_axis, 'axes')
-            warning('FrustumViewer:MissingTimeAxis', ...
+
+            warning( ...
+                'FrustumViewer:MissingTimeAxis', ...
                 'No valid time axis is available for selecting the time range.');
+
             return
         end
 
         t_lim = xlim(cfg.time_axis);
+
+        % IMPORTANT:
+        % selected samples come ONLY from the reference timeline.
         selected_samples = find( ...
             isfinite(timeline) & ...
             timeline >= t_lim(1) & ...
             timeline <= t_lim(2));
+
         selected_idx = 1;
 
         if isempty(selected_samples)
@@ -74,6 +114,8 @@ function fig = frustumViewer(streams, overlays, cfg)
         updatePlot();
     end
 
+
+    %% Keyboard navigation
 
     function onKeyPress(~, event)
 
@@ -105,75 +147,145 @@ function fig = frustumViewer(streams, overlays, cfg)
                 return
         end
 
-        selected_idx = max(1, min(numel(selected_samples), selected_idx));
+        selected_idx = max( ...
+            1, ...
+            min(numel(selected_samples), selected_idx));
 
         updatePlot();
     end
 
 
+    %% Update visualization
+
     function updatePlot()
 
+        % Index into the reference stream.
         sample_idx = selected_samples(selected_idx);
+
+        % This is THE timestamp used by the entire viewer.
         current_t = timeline(sample_idx);
+
+
+        %% Point-cloud streams
 
         for i = 1:numel(streams)
 
-            [idx, dt] = nearestSample(streams(i).t, current_t);
+            if i == reference_idx
 
-            if dt > cfg.max_dt
-                set(cloud_h(i), 'XData', nan, 'YData', nan);
+                % Reference stream:
+                % use the exact sample that generated current_t.
+                idx = sample_idx;
+                dt = 0;
+
+            else
+
+                % Every other stream is synchronized against
+                % the reference timestamp.
+                [idx, dt] = nearestSample( ...
+                    streams(i).t, ...
+                    current_t);
+            end
+
+
+            if isempty(idx) || ~isfinite(dt) || dt > cfg.max_dt
+
+                set( ...
+                    cloud_h(i), ...
+                    'XData', nan, ...
+                    'YData', nan);
+
                 continue
             end
 
+
             points = streams(i).points{idx};
 
-            set(cloud_h(i), ...
+            if isempty(points)
+
+                set( ...
+                    cloud_h(i), ...
+                    'XData', nan, ...
+                    'YData', nan);
+
+                continue
+            end
+
+            set( ...
+                cloud_h(i), ...
                 'XData', points(:,1), ...
                 'YData', points(:,2));
         end
 
 
+        %% Clear old overlays
+
         if ~isempty(overlay_h)
             delete(overlay_h(isgraphics(overlay_h)));
         end
 
         overlay_h = gobjects(0);
+
+
+        %% Overlays
 
         for i = 1:numel(overlays)
 
             overlay = overlays{i};
 
-            [idx, dt] = nearestSample(overlay.t, current_t);
+            [idx, dt] = nearestSample( ...
+                overlay.t, ...
+                current_t);
 
-            if dt <= overlay.max_dt
+            if ~isempty(idx) && ...
+                    isfinite(dt) && ...
+                    dt <= overlay.max_dt
+
                 h = overlay.draw(ax, idx);
-                overlay_h = [overlay_h; h(:)]; %#ok<AGROW>
+
+                overlay_h = [ ...
+                    overlay_h; ...
+                    h(:) ...
+                ]; %#ok<AGROW>
             end
         end
 
 
+        %% Title
+
         title(ax, sprintf( ...
-            't: %.3f s (%d / %d)', ...
-            current_t, selected_idx, numel(selected_samples)));
+            '%s reference | t: %.3f s (%d / %d)', ...
+            cfg.reference_stream, ...
+            current_t, ...
+            selected_idx, ...
+            numel(selected_samples)));
 
         drawnow limitrate
     end
 
 
+    %% Clear plot
+
     function clearPlot(t_lim)
 
         for i = 1:numel(cloud_h)
-            set(cloud_h(i), 'XData', nan, 'YData', nan);
+
+            set( ...
+                cloud_h(i), ...
+                'XData', nan, ...
+                'YData', nan);
         end
 
         if ~isempty(overlay_h)
             delete(overlay_h(isgraphics(overlay_h)));
         end
+
         overlay_h = gobjects(0);
 
         title(ax, sprintf( ...
-            'No samples in selected range [%.3f, %.3f] s', ...
-            t_lim(1), t_lim(2)));
+            'No %s samples in selected range [%.3f, %.3f] s', ...
+            cfg.reference_stream, ...
+            t_lim(1), ...
+            t_lim(2)));
 
         drawnow
     end
@@ -182,5 +294,20 @@ end
 
 function [idx, dt] = nearestSample(t, target_t)
 
-    [dt, idx] = min(abs(double(t(:)) - target_t), [], 'omitnan');
+    t = double(t(:));
+
+    valid = isfinite(t);
+
+    if ~any(valid) || ~isfinite(target_t)
+        idx = [];
+        dt = inf;
+        return
+    end
+
+    valid_idx = find(valid);
+
+    [dt, local_idx] = min( ...
+        abs(t(valid) - target_t));
+
+    idx = valid_idx(local_idx);
 end

@@ -1,4 +1,11 @@
 function [split_structs, source_types] = splitBySourceType(data)
+    
+    if isnan(data.sens_stamp)
+        split_structs = {};
+        source_types = [];
+        return;
+    end
+
 
     % Different source_type values
     source_types = unique(data.source_type);

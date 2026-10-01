@@ -15,10 +15,10 @@ function streams = loadFrustumStreams(log, camera_name)
         if ~isfield(log, topic)
             continue
         end
-
+        
         streams(end+1).name = defs{i,2}; %#ok<AGROW>
-        streams(end).points = pointCloud2TableToCellArray(log, topic);
-        streams(end).t = double(log.(topic).bag_stamp(:));
+        streams(end).points = pointCloud2TableToCellArray(log, topic, ["x", "y", "timestamp"]);
+        streams(end).t = double(log.(topic).header__stamp__tot(:));
         streams(end).color = defs{i,3};
     end
 end

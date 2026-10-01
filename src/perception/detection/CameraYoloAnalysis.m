@@ -1,4 +1,4 @@
-    close all; clc;
+close all; clc;
 clearvars -except colors log log_2 log_3 log_ref trajDatabase
 
 link_axes_mode = 'all'; % 'none', 'figure', or 'all'
@@ -90,11 +90,12 @@ DateTime = datetime(log.time_offset_nsec,'ConvertFrom','epochtime','TicksPerSeco
 %% NAMING
 graphics_options;
 col.lidar   = colors.green{2};
+col.pp      = colors.green{3};
 col.radar   = [77 190 238] / 255;
 col.conly  = colors.yellow{2};
 col.cenh  = colors.orange{2};
-col.conly2  = [1 0 1]; % magenta
-col.cenh2   = [0.5 0 0.5]; % purple
+col.cenh2   = [1 0 1]; % magenta
+col.conly2   = [0.5 0 0.5]; % purple
 col.ref     = colors.black;
 sz=3; % Marker size
 f=1;
@@ -116,15 +117,32 @@ if(compare)
     lid_clust2.stamp = lid_clust2.stamp + double(log_2.time_offset_nsec-log.time_offset_nsec)*1e-9;
     rad_clust2.stamp = rad_clust2.stamp + double(log_2.time_offset_nsec-log.time_offset_nsec)*1e-9;
     lid_pp2.stamp = lid_pp2.stamp + double(log_2.time_offset_nsec-log.time_offset_nsec)*1e-9;
+    
+    % align sensor timestamps
+    cam_yolo2.sens_stamp = cam_yolo2.sens_stamp + double(log_2.time_offset_nsec-log.time_offset_nsec)*1e-9;
+    lid_clust2.sens_stamp = lid_clust2.sens_stamp + double(log_2.time_offset_nsec-log.time_offset_nsec)*1e-9;
+    rad_clust2.sens_stamp = rad_clust2.sens_stamp + double(log_2.time_offset_nsec-log.time_offset_nsec)*1e-9;
+    lid_pp2.sens_stamp = lid_pp2.sens_stamp + double(log_2.time_offset_nsec-log.time_offset_nsec)*1e-9;
+
     [cam_only2, cam_enh2] = splitCamYolo(cam_yolo2);
 end
+if(compare2) 
+    [lid_clust3, rad_clust3, cam_yolo3, lid_pp3, v2v3] = load_perception(log_3);
+    cam_yolo3.sens_stamp(cam_yolo3.sens_stamp < 0) = NaN;
 
-sensors = { ...
-    struct('s', cam_only,  'col', col.conly,  'name', 'cameraOnly'), ...
-    struct('s', cam_only2,  'col', col.conly2,  'name', 'cameraOnly2'), ...
-    struct('s', cam_enh,  'col', col.cenh,  'name', 'cameraEnh'), ...
-    struct('s', cam_enh2,  'col', col.cenh2,  'name', 'cameraEnh'), ...
-};
+    cam_yolo3.stamp = cam_yolo3.stamp + double(log_3.time_offset_nsec-log.time_offset_nsec)*1e-9;
+    lid_clust3.stamp = lid_clust3.stamp + double(log_3.time_offset_nsec-log.time_offset_nsec)*1e-9;
+    rad_clust3.stamp = rad_clust3.stamp + double(log_3.time_offset_nsec-log.time_offset_nsec)*1e-9;
+    lid_pp3.stamp = lid_pp3.stamp + double(log_3.time_offset_nsec-log.time_offset_nsec)*1e-9;
+
+    % align sensor timestamps
+    cam_yolo3.sens_stamp = cam_yolo3.sens_stamp + double(log_3.time_offset_nsec-log.time_offset_nsec)*1e-9;
+    lid_clust3.sens_stamp = lid_clust3.sens_stamp + double(log_3.time_offset_nsec-log.time_offset_nsec)*1e-9;
+    rad_clust3.sens_stamp = rad_clust3.sens_stamp + double(log_3.time_offset_nsec-log.time_offset_nsec)*1e-9;
+    lid_pp3.sens_stamp = lid_pp3.sens_stamp + double(log_3.time_offset_nsec-log.time_offset_nsec)*1e-9;
+
+    [cam_only3, cam_enh3] = splitCamYolo(cam_yolo3);
+end
 
 
 % Disable TT plots from figures
@@ -144,21 +162,34 @@ if (compare2); tt3_exists = exist('tt3', 'var'); end
 % end
 
 % FRUSTUM SETTINGS
-VISUALIZE_FRUSTUM = [false, false, true, false, false, false, false];
+ACTIVE_CAMERAS = [false, false, true, false, false, false, false];
 CAMERA_NAMES = ["camera_sl","camera_fl","camera_fr", "camera_sr", "camera_rr", "camera_r", "camera_rl"];
 
+% REPROJECTION LATENCY
+lat = parseLatencyMsg(log, CAMERA_NAMES);
+if (compare) lat2 = parseLatencyMsg(log_2, CAMERA_NAMES); end
+if (compare2) lat3 = parseLatencyMsg(log_3, CAMERA_NAMES); end
 
 
+sensors = { ...
+    struct('s', lid_clust, 'col', col.lidar,  'name', 'LD'), ...
+    struct('s', rad_clust, 'col', col.radar,  'name', 'RD'), ...
+    struct('s', lid_pp, 'col', col.pp, 'name', 'PP'), ...
+    struct('s', cam_enh, 'col', col.cenh,  'name', 'Cenh'), ...
+    % struct('s', cam_enh2, 'col', col.cenh2,  'name', 'Cenh 2'), ...
+};
 %% PLOTTING
 
 % info;
 % detections;
-% latency;
+latency;
 state_map;
 state_cog;
 range;
+% reproj_latency;
 map;
-frustum_viz;
+% frustum_viz;
+
 
 % covariance;
 % error_analysis;
