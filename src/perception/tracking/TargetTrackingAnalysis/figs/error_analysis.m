@@ -18,7 +18,7 @@ function refreshErrorSummaryButtonPushed(~,~)
 
     % --- fetch from base ---
     tt       = evalin('base','tt');
-    ax_ref   = evalin('base','axes');
+    ax_ref   = evalin('base','ax');
     err_thr  = evalin('base','err_thr');
     errors   = evalin('base','errors');
     compare  = evalin('base','compare');

@@ -405,7 +405,7 @@ grid on; title('range [m]'); legend show
 % count
 axes(f) = nexttile([1,1]); f=f+1; hold on;
 if(log_tt)
-    area(tt.stamp,log.perception__opponents.opponents__cam_yolo_meas(:,1:max_opp),'FaceColor',col.camera,'EdgeColor',col.camera,'DisplayName','Camera');
+    area(tt.stamp,tt.buffer.cam_yolo(:,1:max_opp),'FaceColor',col.camera,'EdgeColor',col.camera,'DisplayName','Camera');
 else
     if(CAMONLY) area(cam_yolo.sens_stamp, cam_yolo.count, 'FaceColor',col.camyolo, 'EdgeColor',col.camyolo, 'DisplayName',NAME_1);end
     if(CAMENH) area(cam_yolo_enh.sens_stamp, cam_yolo_enh.count, 'FaceColor',col.camenh, 'EdgeColor',col.camenh, 'DisplayName',NAME_1); end

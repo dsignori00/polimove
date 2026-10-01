@@ -1,5 +1,6 @@
 clc; close all; clearvars -except log log_ref trajDatabase
 
+use_tt              = false;
 use_sim_ref         = false;
 show_error_series   = true;
 search_correlations = false;
@@ -75,13 +76,11 @@ cam_yolo.sens_stamp(cam_yolo.x_rel < 0) = NaN;
 % ego
 ego.speed_stamp = log.estimation.stamp__tot;
 ego.speed = log.estimation.vx;
-% ego.rpm_stamp = log.vehicle_fbk.stamp__tot;
-% ego.rpm = log.vehicle_fbk.engine_rpm;
 
 % target tracking
-tt.stamp = log.perception__opponents.stamp__tot;
-tt.count = log.perception__opponents.count;
-tt.max_opp = max(tt.count);
+if use_tt
+    tt = load_tt(log);
+end
 
 
 %% PROCESSING 

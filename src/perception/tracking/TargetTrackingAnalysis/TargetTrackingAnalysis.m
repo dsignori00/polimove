@@ -73,7 +73,7 @@ end
 
 % load log ref
 if(use_ref)
-    if  (~exist('log_ref','var'))
+    if  (~exist('log_ref','var') || isempty(log_ref))
         [file,path] = uigetfile(fullfile(opp_dir,'*.mat'),'Load ground truth');
         tmp = load(fullfile(path,file));
         log_ref = tmp.out;

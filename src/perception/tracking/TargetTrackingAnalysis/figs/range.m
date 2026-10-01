@@ -3,7 +3,7 @@ figure('name', 'Filter - Range', 'NumberTitle', 'off');
 tiledlayout(2,1,'Padding','compact');
 
 % rho 
-axes(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile([1,1]); f=f+1; hold on;
 for i = 1:numel(sensors)
     s = sensors{i}.s;
     s.range = sqrt(s.x_rel.^2 + s.y_rel.^2);
@@ -29,7 +29,7 @@ end
 grid on; ylabel('range [m]'); ylim([0 200]); legend show;
 
 % rho dot
-axes(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile([1,1]); f=f+1; hold on;
 for i = 1:numel(sensors)
     s = sensors{i}.s;
     if isfield(s, 'rho_dot')

@@ -271,7 +271,7 @@ grid on; title('range [m]');
 % count
 axes(f) = nexttile([1,1]); f=f+1; hold on;
 if(log_tt)
-    area(tt.stamp,log.perception__opponents.opponents__cam_yolo_meas(:,1:max_opp),'FaceColor',col.camera,'EdgeColor',col.camera,'DisplayName','Camera');
+    area(tt.stamp,tt.buffer.lid_pp(:,1:max_opp),'FaceColor',col.pointpillars,'EdgeColor',col.pointpillars,'DisplayName','Pointpillars');
 else
     area(lid_pp.sens_stamp, lid_pp.count, 'FaceColor',col.pointpillars, 'EdgeColor',col.pointpillars, 'DisplayName','Pointpillars');
     if(compare) area(lid_pp2.sens_stamp, lid_pp2.count, 'FaceColor',col.pointpillars2, 'EdgeColor',col.pointpillars2, 'DisplayName','Pointpillars'); end

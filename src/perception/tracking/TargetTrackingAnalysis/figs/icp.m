@@ -3,7 +3,7 @@ figure('name', 'Filter - Pointpillars Icp', 'NumberTitle', 'off');
 tiledlayout(3,1,'Padding','compact');
 
 % rho 
-axes(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile([1,1]); f=f+1; hold on;
 for i = 1:numel(sensors)
     s = sensors{i}.s;
     s.range = sqrt(s.x_rel.^2 + s.y_rel.^2);
@@ -29,7 +29,7 @@ end
 grid on; ylabel('range [m]'); ylim([0 200]); legend show;
 
 % yaw
-axes(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile([1,1]); f=f+1; hold on;
 for i = 1:numel(sensors)
     s = sensors{i}.s;
     plot_detections(s.sens_stamp, unwrap_pi(s.yaw_map), s.max_det, sensors{i}.col, sensors{i}.name);
@@ -42,7 +42,7 @@ if(use_ref || use_sim_ref); plot(gt.stamp,gt.yaw_map,'Color',col.ref,'DisplayNam
 grid on; ylabel('yaw [deg]'); xlabel('timestamp [s]'); legend show;
 
 % valid yaw
-axes(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile([1,1]); f=f+1; hold on;
 for i =1:lid_pp.max_det
     plot(lid_pp.sens_stamp, lid_pp.valid_yaw(:,i), 'DisplayName', sprintf('Track %d', i));
 end

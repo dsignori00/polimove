@@ -20,21 +20,21 @@ emptyDetectionStruct = struct( ...
     'z_map', NaN, ...
     'yaw_map', NaN, ...
     'count', NaN, ...
-    'buffer', NaN, ... 
     'valid_yaw', NaN ...
 );
 
 emptyRadarStruct = emptyDetectionStruct;
 emptyRadarStruct.rho_dot = NaN;
-opp = log.perception__opponents;
 
+sens_stamp_field = "detections__sensor_stamp__tot";
+% sens_stamp_field = "sensor_stamp__tot";
 
 %  LIDAR CLUSTERING DETECTIONS
 
 if isfield(log,'perception__lidar__clustering_detections')
     d = log.perception__lidar__clustering_detections;
 
-    lid_clust.sens_stamp = d.sensor_stamp__tot;
+    lid_clust.sens_stamp = d.(sens_stamp_field);
     lid_clust.stamp      = d.stamp__tot;
 
     lid_clust.x_rel   = replaceZeroWithNaN(d.detections__x_rel);
@@ -49,7 +49,6 @@ if isfield(log,'perception__lidar__clustering_detections')
     lid_clust.valid_yaw = d.detections__valid_yaw;
 
     lid_clust.count    = getDetectionCount(d, lid_clust.x_rel);
-    lid_clust.buffer   = opp.opponents__lid_clust_meas;
     lid_clust.max_det = max(sum(~isnan(lid_clust.x_rel')));
 else
     lid_clust = emptyDetectionStruct;
@@ -62,7 +61,7 @@ end
 if isfield(log,'perception__radar__clustering_detections')
     d = log.perception__radar__clustering_detections;
 
-    rad_clust.sens_stamp = d.sensor_stamp__tot;
+    rad_clust.sens_stamp = d.(sens_stamp_field) ;
     rad_clust.stamp      = d.stamp__tot;
 
     rad_clust.x_rel   = replaceZeroWithNaN(d.detections__x_rel);
@@ -78,7 +77,6 @@ if isfield(log,'perception__radar__clustering_detections')
     rad_clust.valid_yaw = d.detections__valid_yaw;
 
     rad_clust.count    = getDetectionCount(d, rad_clust.x_rel);
-    rad_clust.buffer   = opp.opponents__rad_clust_meas;
     rad_clust.max_det = max(sum(~isnan(rad_clust.x_rel')));
 else
     rad_clust = emptyRadarStruct;
@@ -91,7 +89,7 @@ end
 if isfield(log,'perception__camera__yolo_detections')
     d = log.perception__camera__yolo_detections;
 
-    cam_yolo.sens_stamp = d.sensor_stamp__tot;
+    cam_yolo.sens_stamp = d.(sens_stamp_field)  ;
     cam_yolo.stamp      = d.stamp__tot;
 
     cam_yolo.x_rel   = replaceZeroWithNaN(d.detections__x_rel);
@@ -106,7 +104,6 @@ if isfield(log,'perception__camera__yolo_detections')
     cam_yolo.valid_yaw = d.detections__valid_yaw;
 
     cam_yolo.count    = getDetectionCount(d, cam_yolo.x_rel);
-    cam_yolo.buffer   = opp.opponents__cam_yolo_meas;
     cam_yolo.max_det = max(sum(~isnan(cam_yolo.x_rel')));
 else
     cam_yolo = emptyDetectionStruct;
@@ -119,7 +116,7 @@ end
 if isfield(log,'perception__lidar__pointpillars_detections')
     d = log.perception__lidar__pointpillars_detections;
 
-    lid_pp.sens_stamp = d.sensor_stamp__tot;
+    lid_pp.sens_stamp = d.(sens_stamp_field);
     lid_pp.stamp      = d.stamp__tot;
 
     lid_pp.x_rel   = replaceZeroWithNaN(d.detections__x_rel);
@@ -134,7 +131,6 @@ if isfield(log,'perception__lidar__pointpillars_detections')
     lid_pp.valid_yaw = d.detections__valid_yaw;
 
     lid_pp.count    = getDetectionCount(d, lid_pp.x_rel);
-    lid_pp.buffer   = opp.opponents__lid_pp_meas;
     lid_pp.max_det = max(sum(~isnan(lid_pp.x_rel')));
 else
     lid_pp = emptyDetectionStruct;
@@ -147,7 +143,7 @@ end
 if isfield(log,'perception__v2v__detections')
     d = log.perception__v2v__detections;
 
-    v2v.sens_stamp = d.sensor_stamp__tot;
+    v2v.sens_stamp = d.(sens_stamp_field);
     v2v.stamp      = d.stamp__tot;
 
     v2v.x_rel   = replaceZeroWithNaN(d.detections__x_rel);
@@ -163,7 +159,6 @@ if isfield(log,'perception__v2v__detections')
     v2v.valid_yaw = d.detections__valid_yaw;
 
     v2v.count   = getDetectionCount(d, v2v.x_rel);
-    v2v.buffer  = opp.opponents__v2v_meas;
     v2v.max_det = max(sum(~isnan(v2v.x_rel')));
 else
     v2v = emptyDetectionStruct;

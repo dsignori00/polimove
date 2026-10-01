@@ -12,8 +12,7 @@ function refreshTimeButtonPushed(~, ~)
 
     % --- fetch from base ---
     col          = evalin('base','col');
-    ax           = evalin('base','axes');
-    log          = evalin('base','log');
+    ax           = evalin('base','ax');
     tt           = evalin('base','tt');
     sensors      = evalin('base','sensors');
     use_ref      = evalin('base','use_ref');
@@ -28,7 +27,7 @@ function refreshTimeButtonPushed(~, ~)
     % --- time window ---
     t_lim = xlim(ax(1));
 
-    [t1_log, tend_log] = timeWindowIdx(tt.stamp, t_lim);
+    [t1_tt, tend_tt] = timeWindowIdx(tt.stamp, t_lim);
     if gt_on; [t1_gt, tend_gt] = timeWindowIdx(gt.stamp, t_lim); end
 
     if gt_on
@@ -61,10 +60,10 @@ function refreshTimeButtonPushed(~, ~)
 
     % --- detection rate ---
     nexttile; cla reset; hold on; grid on;
-    camera_rate = log.perception__opponents.opponents__cam_yolo_meas(t1_log:tend_log,1);
-    lidar_rate  = log.perception__opponents.opponents__lid_clust_meas(t1_log:tend_log,1) - camera_rate;
-    pp_rate     = log.perception__opponents.opponents__lid_pp_meas(t1_log:tend_log,1) - lidar_rate - camera_rate;
-    radar_rate  = log.perception__opponents.opponents__rad_clust_meas(t1_log:tend_log,1) - pp_rate - lidar_rate - camera_rate;
+    camera_rate = tt.buffer.cam_yolo(t1_tt:tend_tt,1);
+    lidar_rate  = tt.buffer.lid_clust(t1_tt:tend_tt,1) - camera_rate;
+    pp_rate     = tt.buffer.lid_pp(t1_tt:tend_tt,1) - lidar_rate - camera_rate;
+    radar_rate  = tt.buffer.rad_clust(t1_tt:tend_tt,1) - pp_rate - lidar_rate - camera_rate;
     
     rates = {lidar_rate, pp_rate, radar_rate, camera_rate};
     names = ["Lidar","PP","Radar","Camera"];

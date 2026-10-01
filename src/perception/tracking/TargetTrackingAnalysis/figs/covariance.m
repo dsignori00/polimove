@@ -58,7 +58,7 @@ cov_xy_sum = cov_xy_map + cov_yx_map;
 cov_x_cog = sqrt(cy.^2 .* cov_xx_map + cy .* sy .* cov_xy_sum + sy.^2 .* cov_yy_map);
 cov_y_cog = sqrt(sy.^2 .* cov_xx_map - cy .* sy .* cov_xy_sum + cy.^2 .* cov_yy_map);
 
-axes(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile([1,1]); f=f+1; hold on;
 % --- Loop over each sensor type ---
 for k = 1:size(sensor_list,1)
     name = sensor_list{k,1};
@@ -81,7 +81,7 @@ plot(tt.stamp, cov_x_cog,'Color', col.tt, 'DisplayName', 'track');
 grid on; ylabel('x cog [m]'); legend show;
 
 
-axes(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile([1,1]); f=f+1; hold on;
 % --- Loop over each sensor type ---
 for k = 1:size(sensor_list,1)
     name = sensor_list{k,1};
@@ -105,7 +105,7 @@ grid on; ylabel('y cog [m]');  legend show;
 
 
 % yaw
-axes(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile([1,1]); f=f+1; hold on;
 % --- Loop over each sensor type ---
 for k = 1:size(sensor_list,1)
     name = sensor_list{k,1};
@@ -131,7 +131,7 @@ figure('name', 'Covariance - Speed Acc', 'NumberTitle', 'off');
 tiledlayout(3,1,'Padding','compact');
 
 % speed
-axes(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile([1,1]); f=f+1; hold on;
 % --- Loop over each sensor type ---
 for k = 1:size(sensor_list,1)
     name = sensor_list{k,1};
@@ -154,7 +154,7 @@ grid on; ylabel('speed [m/s]'); legend show;
 
 
 % acceleration
-axes(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile([1,1]); f=f+1; hold on;
 % --- Loop over each sensor type ---
 for k = 1:size(sensor_list,1)
     name = sensor_list{k,1};
@@ -176,7 +176,7 @@ plot(tt.stamp,sqrt(tt.covariance(:,opp_idx, 36)),'Color',col.tt,'DisplayName','t
 grid on; ylabel('acc [m/s$^2$]'); legend show; 
 
 % yaw rate
-axes(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile([1,1]); f=f+1; hold on;
 % --- Loop over each sensor type ---
 for k = 1:size(sensor_list,1)
     name = sensor_list{k,1};
@@ -226,14 +226,14 @@ guidata(assFig,S);
 function refreshTimeButtonPushed(~,~)
     % Pull needed vars
     assFig     = evalin('base', 'assFig');
-    axes       = evalin('base', 'axes');
+    ax          = evalin('base', 'ax');
     tt         = evalin('base', 'tt');
     traj_db    = evalin('base', 'trajDatabase');
     col        = evalin('base', 'col');
     dist       = evalin('base', 'dist');
 
     % Determine range from x-limits
-    t_lim = xlim(axes(1));
+    t_lim = xlim(ax(1));
     t1_tt   = find(tt.stamp > t_lim(1), 1, 'first');
     tend_tt = find(tt.stamp < t_lim(2), 1, 'last');
 

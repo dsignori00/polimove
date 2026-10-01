@@ -70,6 +70,27 @@ f=1;
 rad1 = get_radar_fields(log);
 if(compare); rad2 = get_radar_fields(log2); end
 
+
+% BRIDGE POSITIONS
+BRIDGE_POSITION.THRESHOLD = 5;
+
+track = -1;
+tracks = [0,1];
+while ~ismember(track, tracks)
+    disp( "Choose track:" + newline + ...
+        " 1: Laguna Seca " + newline + ...
+        " 0: No bridges");
+    track = input("Choose track identifier: ");
+end
+switch track
+    case 1
+        BRIDGE_POSITION.X_MAP = [-65.571, -66.7, -61.9, 586.3, 591.4, 630.4, 451.6, 458.7, 190.6, 83.4, -63.4, -58.5, 86.2, 85.8, 183.5, 451.0, 452.9, 460.0, 623.7];
+        BRIDGE_POSITION.Y_MAP = [1.693, 7.7, 4.8, -25.9, -26.3, -304.2, -650.1, -649.0, -534.1, -150.2, 14.8, 11.4, -151.5, -144.0, -532.2, -653.3, -656.4, -655.1, -303.9];
+    otherwise
+        BRIDGE_POSITION.X_MAP = [];
+        BRIDGE_POSITION.Y_MAP = [];
+        warning('No bridge positions defined for this database.');
+end
 %% PROCESSING
 
 if(ground_truth); gt_timestamp = (gt.timestamp - double(log.time_offset_nsec))*10^-9; end
@@ -146,34 +167,34 @@ rad1 = sum_radar_counts(rad1, 4);
 if(compare); rad2 = sum_radar_counts(rad2, 4); end
 
 % liveliness
-liv_idx = find_radar_indices(log);
-liveliness_stamp = log.liveliness__state.bag_stamp;
+% liv_idx = find_radar_indices(log);
+% liveliness_stamp = log.liveliness__state.bag_stamp;
 
 
-%% LATENCY FIGURE
-figure('name','Latency')
-tiledlayout(3,1,'Padding','compact');
-
-axes(f) = nexttile; f=f+1;
-hold on;
-plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(1)), 'DisplayName','RF');
-plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(3)), 'DisplayName','RR');
-plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(5)), 'DisplayName','RL');
-plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(7)), 'DisplayName','RB');
-grid on; title('radar points rate [s]'); legend; xlim(x_lim);
-
-axes(f) = nexttile; f=f+1;
-hold on;
-plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(2)), 'DisplayName','RF');
-plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(4)), 'DisplayName','RR');
-plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(6)), 'DisplayName','RL');
-plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(8)), 'DisplayName','RB');
-grid on; title('radar udp packages rate [s]'); legend; xlim(x_lim);
-
-axes(f) = nexttile; f=f+1;
-hold on;
-plot(rad1.stamp,rad1.stamp-rad1.sens_stamp, 'Color', col.radar,'DisplayName',NAME_1);
-grid on; title('radar clustering latency [s]'); legend; xlim(x_lim);
+% %% LATENCY FIGURE
+% figure('name','Latency')
+% tiledlayout(3,1,'Padding','compact');
+% 
+% axes(f) = nexttile; f=f+1;
+% hold on;
+% plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(1)), 'DisplayName','RF');
+% plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(3)), 'DisplayName','RR');
+% plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(5)), 'DisplayName','RL');
+% plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(7)), 'DisplayName','RB');
+% grid on; title('radar points rate [s]'); legend; xlim(x_lim);
+% 
+% axes(f) = nexttile; f=f+1;
+% hold on;
+% plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(2)), 'DisplayName','RF');
+% plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(4)), 'DisplayName','RR');
+% plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(6)), 'DisplayName','RL');
+% plot(liveliness_stamp, log.liveliness__state.nodes_states__current_rate(:,liv_idx(8)), 'DisplayName','RB');
+% grid on; title('radar udp packages rate [s]'); legend; xlim(x_lim);
+% 
+% axes(f) = nexttile; f=f+1;
+% hold on;
+% plot(rad1.stamp,rad1.stamp-rad1.sens_stamp, 'Color', col.radar,'DisplayName',NAME_1);
+% grid on; title('radar clustering latency [s]'); legend; xlim(x_lim);
 
 
 %% STATE FIGURE COG
@@ -273,6 +294,7 @@ function refreshTimeButtonPushed(src,event)
     compare = evalin('base', 'compare');
     col = evalin('base', 'col');
     rad1 = evalin('base', 'rad1');
+    bridge_position = evalin('base', 'BRIDGE_POSITION');
     if(ground_truth); gt=evalin('base','gt'); end
     if(ground_truth); gt_timestamp = evalin('base','gt_timestamp'); end
     if(compare); rad2 = evalin('base', 'rad2'); end
@@ -308,5 +330,95 @@ function refreshTimeButtonPushed(src,event)
     plot(rad1.x_map(t1_rad_clust:tend_rad_clust), rad1.y_map(t1_rad_clust:tend_rad_clust),'.','markersize',20,'Color',col.radar,'displayname','Rad Clust');
     if(compare); plot(rad2.x_map(t1_rad_clust2:tend_rad_clust2), rad2.y_map(t1_rad_clust2:tend_rad_clust2),'.','markersize',20,'Color',col.radar2,'displayname','Rad Clust'); end
     if(ground_truth); plot(gt.x_map(t1_gt_ref:tend_gt_ref),gt.y_map(t1_gt_ref:tend_gt_ref),'Color',col.ref,'DisplayName','Grond Truth'); end
+
+    % Draw draggable bridge regions using THRESHOLD as the radius in meters.
+    circle_angle = linspace(0, 2*pi, 64);
+    for bridge_idx = 1:numel(bridge_position.X_MAP)
+        if bridge_idx == 1
+            handle_visibility = 'on';
+        else
+            handle_visibility = 'off';
+        end
+
+        patch( ...
+            bridge_position.X_MAP(bridge_idx) + bridge_position.THRESHOLD*cos(circle_angle), ...
+            bridge_position.Y_MAP(bridge_idx) + bridge_position.THRESHOLD*sin(circle_angle), ...
+            'red', ...
+            'FaceAlpha', 0.3, ...
+            'EdgeColor', 'black', ...
+            'HandleVisibility', handle_visibility, ...
+            'DisplayName', 'Bridge positions', ...
+            'PickableParts', 'all', ...
+            'HitTest', 'on', ...
+            'ButtonDownFcn', @(circle, event) startBridgeDrag(circle, event, bridge_idx));
+    end
+
     legend show
+end
+
+function startBridgeDrag(circle, ~, bridge_idx)
+    fig = ancestor(circle, 'figure');
+    if ~strcmp(fig.SelectionType, 'normal')
+        return;
+    end
+
+    ax = ancestor(circle, 'axes');
+    bridge_position = evalin('base', 'BRIDGE_POSITION');
+    center = [ ...
+        bridge_position.X_MAP(bridge_idx), ...
+        bridge_position.Y_MAP(bridge_idx)];
+    cursor_position = ax.CurrentPoint(1, 1:2);
+
+    drag_state.circle = circle;
+    drag_state.axes = ax;
+    drag_state.bridge_idx = bridge_idx;
+    drag_state.cursor_offset = center - cursor_position;
+    drag_state.circle_x_offset = circle.XData - center(1);
+    drag_state.circle_y_offset = circle.YData - center(2);
+    drag_state.center = center;
+
+    setappdata(fig, 'BridgeDragState', drag_state);
+    fig.Pointer = 'fleur';
+    fig.WindowButtonMotionFcn = @moveBridgeCircle;
+    fig.WindowButtonUpFcn = @finishBridgeDrag;
+end
+
+function moveBridgeCircle(fig, ~)
+    if ~isappdata(fig, 'BridgeDragState')
+        return;
+    end
+
+    drag_state = getappdata(fig, 'BridgeDragState');
+    cursor_position = drag_state.axes.CurrentPoint(1, 1:2);
+    drag_state.center = cursor_position + drag_state.cursor_offset;
+
+    drag_state.circle.XData = drag_state.center(1) + drag_state.circle_x_offset;
+    drag_state.circle.YData = drag_state.center(2) + drag_state.circle_y_offset;
+    setappdata(fig, 'BridgeDragState', drag_state);
+    drawnow limitrate nocallbacks;
+end
+
+function finishBridgeDrag(fig, ~)
+    if ~isappdata(fig, 'BridgeDragState')
+        return;
+    end
+
+    moveBridgeCircle(fig, []);
+    drag_state = getappdata(fig, 'BridgeDragState');
+
+    bridge_position = evalin('base', 'BRIDGE_POSITION');
+    bridge_position.X_MAP(drag_state.bridge_idx) = drag_state.center(1);
+    bridge_position.Y_MAP(drag_state.bridge_idx) = drag_state.center(2);
+    assignin('base', 'BRIDGE_POSITION', bridge_position);
+
+    fprintf('\nBridge circle %d moved:\n', drag_state.bridge_idx);
+    fprintf('BRIDGE_POSITION.X_MAP(%d) = %.3f;\n', ...
+        drag_state.bridge_idx, drag_state.center(1));
+    fprintf('BRIDGE_POSITION.Y_MAP(%d) = %.3f;\n', ...
+        drag_state.bridge_idx, drag_state.center(2));
+
+    rmappdata(fig, 'BridgeDragState');
+    fig.Pointer = 'arrow';
+    fig.WindowButtonMotionFcn = '';
+    fig.WindowButtonUpFcn = '';
 end

@@ -92,25 +92,38 @@ end
 
 %Select opponent and gps
 opp_id = -1;
-lista_opponents = [0,3,6,33,71];
+lista_opponents = [0,2,3,6,33,71];
 while ~ismember(opp_id, lista_opponents)
     disp( "Choose opponent:" + newline + ...
         " 3: Kinetiz " + newline + ...
         " 6: Unimore " + newline + ...
         "33: Tum" + newline + ...
         "71: Tii " + newline + ...
+        " 2: Purdue " + newline + ...
         " 0: Quit");
     opp_id = input("Choose opponent identifier: ");
 end
 
 
 switch(opp_id)
+    case 2 
+        ref_sys = "lla";
+        opp_lat0 = 36.58733835;
+        opp_lon0 = -121.75566957;
+        opp_alt0 = -2.35619;
+        out.timestamp = opp_log.stamp*10^9;
+        out.x_map = opp_log.x_cog;
+        out.y_map = opp_log.y_cog;
+        out.yaw_map = unwrap(opp_log.heading);
+        out.speed = opp_log.vx;
+        out.ax = opp_log.ax;
+
     case 3
         ref_sys = "lla";
         opp_lat0 = 44.344351;
         opp_lon0 = 11.714010;
         opp_alt0 = 0.0;
-        out.timestamp = opp_log.timestamp_s*10^9;
+        out.timestamp = opp_log.timestamp*10^9;
         out.x_map = opp_log.x_m;
         out.y_map = opp_log.y_m;
         out.yaw_map = unwrap(opp_log.yaw_rad);
@@ -119,8 +132,8 @@ switch(opp_id)
 
     case 6
         ref_sys = "utm";
-        opp_lat0 = 44.344351;
-        opp_lon0 = 11.714010;
+        opp_lat0 = 36.586455;
+        opp_lon0 = -121.756645;
         opp_alt0 = 0.0;
         out.timestamp = opp_log.stamp;
         out.x_map = opp_log.x;
@@ -156,7 +169,7 @@ switch(opp_id)
 end
 
 %Select the track
-track_list = [0,1,2,3,4,5,6];
+track_list = [0,1,2,3,4,5,6,7];
 track_id = -1;
 while ~ismember(track_id, track_list)
     disp( "Choose track:" + newline + ...
@@ -166,6 +179,7 @@ while ~ismember(track_id, track_list)
           " 4: YasMarina " + newline + ...
           " 5: YasNorth " + newline + ...
           " 6: Imola " + newline + ...
+          " 7: LagunaSeca " + newline + ...
           " 0: Quit");
     track_id = input("Insert track identifier: ");
 end
@@ -209,6 +223,11 @@ switch (track_id)
         lon0 = 11.71339346495961;
         alt0 = 40.0;
         load("Imola.mat")
+     case 7
+         lat0 = 36.586062395673760 + 1.0e-5;
+         lon0 = -121.7562012288262;
+         alt0 = 231.0461153351115;
+         load("LagunaSeca.mat")
     case 0
         error("Quit");
     otherwise
@@ -248,7 +267,7 @@ freq = 1./diff;
 avg_freq = mean(freq)*10^9;
 out.bag_avg_freq = avg_freq;
 
-framelen = floor(avg_freq) / 2;
+framelen = floor(avg_freq / 2);
 if(mod(framelen,2)==0)
     framelen = framelen + 1;
 end 

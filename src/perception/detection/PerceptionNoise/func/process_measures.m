@@ -2,15 +2,11 @@
 for k = 1:numel(sensors)
     s = sensors{k}.s;
 
-    valid = isfinite(s.sens_stamp) & isfinite(s.x_map(:,1));
+    % This analysis intentionally evaluates only the first detection.
+    valid = isfinite(s.sens_stamp(:,1)) & isfinite(s.x_map(:,1));
     for l = fields
         field = l{1};
-        s.(field) = s.(field)(valid,:);
-
-        % This analysis intentionally evaluates only the first detection.
-        if ~ismember(field, {'stamp','sens_stamp'})
-            s.(field) = s.(field)(:,1);
-        end
+        s.(field) = s.(field)(valid,1);
     end
 
     if isfield(s,'rho_dot')

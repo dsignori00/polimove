@@ -19,6 +19,17 @@ function tt = load_tt(log)
         tt.covariance = valid_covariance(log.perception__opponents.opponents__ekf_p);
         tt.count = log.perception__opponents.count;
         tt.max_opp = max(tt.count);
+        empty_buffer = nan(size(tt.x_map));
+        tt.buffer.lid_clust = get_measure_buffer( ...
+            log.perception__opponents, "opponents__lid_clust_meas", empty_buffer);
+        tt.buffer.rad_clust = get_measure_buffer( ...
+            log.perception__opponents, "opponents__rad_clust_meas", empty_buffer);
+        tt.buffer.cam_yolo = get_measure_buffer( ...
+            log.perception__opponents, "opponents__cam_yolo_meas", empty_buffer);
+        tt.buffer.lid_pp = get_measure_buffer( ...
+            log.perception__opponents, "opponents__lid_pp_meas", empty_buffer);
+        tt.buffer.v2v = get_measure_buffer( ...
+            log.perception__opponents, "opponents__v2v_meas", empty_buffer);
         tt.x_map(tt.x_map==0)=nan;
         tt.y_map(tt.y_map==0)=nan;
         tt.vx(tt.vx==0)=nan;
@@ -61,5 +72,13 @@ function tt = load_tt(log)
         end
     else
         error('No target tracking data found in the log.');
+    end
+end
+
+function buffer = get_measure_buffer(opponents, field_name, empty_buffer)
+    if isfield(opponents, field_name)
+        buffer = opponents.(field_name);
+    else
+        buffer = empty_buffer;
     end
 end

@@ -18,15 +18,29 @@ end
 tiledlayout(max(1, numel(validSensors)),1,'Padding','compact');
 
 for i = validSensors
-    axes(f) = nexttile([1,1]); f=f+1; hold on;
+    ax(f) = nexttile([1,1]); f=f+1; hold on;
     s = sensors{i}.s;
-    latencies = s.stamp - s.sens_stamp;
 
-    filterInputStamp = s.stamp(:);
-    filterInputLatencies = latencies(:);
-    validLatency = isfinite(filterInputStamp) & isfinite(filterInputLatencies);
-    [sortedStamp, order] = sort(filterInputStamp(validLatency));
-    sortedLatencies = filterInputLatencies(validLatency);
+    sensorStamp = s.sens_stamp;
+    receiveStamp = s.stamp;
+    if isvector(receiveStamp) && numel(receiveStamp) == size(sensorStamp,1)
+        receiveStamp = repmat(receiveStamp(:), 1, size(sensorStamp,2));
+    elseif ~isequal(size(receiveStamp), size(sensorStamp))
+        error('Timestamp dimensions do not match for sensor %s.', sensors{i}.name);
+    end
+
+    latencies = receiveStamp - sensorStamp;
+    validMeasure = ...
+        isfinite(s.x_rel) | isfinite(s.y_rel) | ...
+        isfinite(s.x_map) | isfinite(s.y_map);
+    validLatency = ...
+        isfinite(receiveStamp) & isfinite(sensorStamp) & validMeasure;
+    latencies(~validLatency) = NaN;
+
+    filterInputStamp = receiveStamp(validLatency);
+    filterInputLatencies = latencies(validLatency);
+    [sortedStamp, order] = sort(filterInputStamp);
+    sortedLatencies = filterInputLatencies;
     sortedLatencies = sortedLatencies(order);
 
     [filterStamp, ~, stampGroup] = unique(sortedStamp);
@@ -34,7 +48,9 @@ for i = validSensors
     filteredLatency = movmean(meanLatency, movingAverageWindowSeconds, ...
         'SamplePoints', filterStamp);
 
-    plot_detections(s.stamp, latencies, 1, sensors{i}.col, sensors{i}.name, '-');
+    maxDet = min(s.max_det, size(latencies,2));
+    plot_detections(receiveStamp, latencies, maxDet, ...
+        sensors{i}.col, sensors{i}.name, '-');
     plot(filterStamp, filteredLatency, ...
         'Color', 'k', ...
         'LineWidth', 2.5, ...

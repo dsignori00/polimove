@@ -3,7 +3,7 @@ figure('name', 'Filter - CoG', 'NumberTitle', 'off');
 tiledlayout(3,1,'Padding','compact');
 
 % pos x
-axes(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile([1,1]); f=f+1; hold on;
 for i = 1:numel(sensors)
     s = sensors{i}.s;
     plot_detections(s.sens_stamp, s.x_rel, s.max_det, sensors{i}.col, sensors{i}.name);
@@ -15,7 +15,7 @@ if(use_ref || use_sim_ref); plot(gt.stamp, gt.x_rel, 'Color',col.ref,'DisplayNam
 grid on; ylabel('x rel [m]'); legend show;
 
 % pos y
-axes(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile([1,1]); f=f+1; hold on;
 for i = 1:numel(sensors)
     s = sensors{i}.s;
     plot_detections(s.sens_stamp, s.y_rel, s.max_det, sensors{i}.col, sensors{i}.name);
@@ -27,7 +27,7 @@ if(use_ref || use_sim_ref); plot(gt.stamp, gt.y_rel, 'Color',col.ref,'DisplayNam
 grid on; ylabel('y rel [m]'); legend show;
 
 % rho dot
-axes(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile([1,1]); f=f+1; hold on;
 for i = 1:numel(sensors)
     s = sensors{i}.s;
     if isfield(s, 'rho_dot')

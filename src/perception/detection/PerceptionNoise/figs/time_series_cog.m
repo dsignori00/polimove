@@ -1,6 +1,6 @@
 %% STATE FIGURE REL
 figure('name', 'Series - CoG');
-tiledlayout(3,1,'Padding','compact');
+tiledlayout(2 + double(use_tt),1,'Padding','compact');
 
 % pos x
 ax(f) = nexttile([1,1]); f=f+1; hold on;
@@ -21,9 +21,13 @@ plot(gt.stamp, gt.y_rel, 'Color',col.ref,'DisplayName','gt');
 grid on; ylabel('y rel [m]'); legend show; ylim([-100 100]);
 
 % count
-ax(f) = nexttile([1,1]); f=f+1; hold on;
-plot_area(tt.stamp, log.perception__opponents.opponents__rad_clust_meas, tt.max_opp, col.radar,        'Rad Clust');
-plot_area(tt.stamp, log.perception__opponents.opponents__lid_pp_meas,    tt.max_opp, col.pp, 'Lid PP');
-plot_area(tt.stamp, log.perception__opponents.opponents__lid_clust_meas, tt.max_opp, col.lidar,        'Lid Clust');
-plot_area(tt.stamp, log.perception__opponents.opponents__cam_yolo_meas,  tt.max_opp, col.camera,       'Camera');
-grid on; ylabel('count'); legend show; xlabel('timestamp [s]');
+if use_tt
+    ax(f) = nexttile([1,1]); f=f+1; hold on;
+    plot_area(tt.stamp, tt.buffer.rad_clust, tt.max_opp, col.radar, 'Rad Clust');
+    plot_area(tt.stamp, tt.buffer.lid_pp,    tt.max_opp, col.pp,    'Lid PP');
+    plot_area(tt.stamp, tt.buffer.lid_clust, tt.max_opp, col.lidar,'Lid Clust');
+    plot_area(tt.stamp, tt.buffer.cam_yolo,  tt.max_opp, col.camera,'Camera');
+    grid on; ylabel('count'); legend show; xlabel('timestamp [s]');
+else
+    xlabel('timestamp [s]');
+end
