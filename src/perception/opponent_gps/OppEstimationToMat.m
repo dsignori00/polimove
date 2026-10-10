@@ -29,6 +29,8 @@
 % rho_dot                   % range rate (relative speed)
 % clos_idx                  % traj server closest idx
 % lap                       % lap counter
+% ref_offset                % reference point offset to the vehicle center convention [m]
+
 
 % NOTE: for UTM conversion, install following add-on
 % https://github.com/geographiclib/geographiclib-octave
@@ -117,7 +119,7 @@ switch(opp_id)
         out.yaw_map = unwrap(opp_log.heading);
         out.speed = opp_log.vx;
         out.ax = opp_log.ax;
-
+        out.ref_offset = 0.0;
     case 3
         ref_sys = "lla";
         opp_lat0 = 44.344351;
@@ -129,6 +131,8 @@ switch(opp_id)
         out.yaw_map = unwrap(opp_log.yaw_rad);
         out.speed = opp_log.vx_mps;
         out.ax = opp_log.ax_mps2;
+        out.ref_offset = 0.0;
+
 
     case 6
         ref_sys = "utm";
@@ -141,6 +145,7 @@ switch(opp_id)
         out.yaw_map = unwrap(opp_log.yaw);
         out.speed = opp_log.vx;
         out.ax = opp_log.ax;
+        out.ref_offset = 0.0;
 
     case 33
         ref_sys = "lla";
@@ -153,6 +158,7 @@ switch(opp_id)
         out.yaw_map = unwrap(opp_log.heading());
         out.speed = opp_log.vx;
         out.ax = opp_log.ax;
+        out.ref_offset = 0.0;
 
     case 71
         ref_sys = "lla";
@@ -165,6 +171,7 @@ switch(opp_id)
         out.yaw_map = unwrap(opp_log.yaw);
         out.speed = opp_log.vel_x;
         out.ax = opp_log.ax;
+        out.ref_offset = 0.0;
 
 end
 
@@ -333,6 +340,12 @@ if (~exist('out.clos_idx','var'))
     out.clos_idx = opp_idx;
     out.lap = assign_lap(opp_idx);
 end
+
+%% Reference offset correction
+
+out.x_map(opp_idxs) = out.x_map(opp_idxs) + out.ref_offset*cos(ego_yaw_map(closest_idxs));
+out.y_map(opp_idxs) = out.y_map(opp_idxs) + out.ref_offset*sin(ego_yaw_map(closest_idxs));
+
 
 %% Relative metrics computation
 
