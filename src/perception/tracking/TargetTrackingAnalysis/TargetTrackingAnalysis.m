@@ -3,9 +3,9 @@ clearvars -except colors log log_2 log_3 log_ref trajDatabase
 
 link_axes_mode = 'all'; % 'none', 'figure', or 'all'
 
-use_ref     = true;
+use_ref     = false;
 use_sim_ref = false;
-compare     = false;
+compare     = true;
 compare2    = false;
 
 opp_idx     = 1;

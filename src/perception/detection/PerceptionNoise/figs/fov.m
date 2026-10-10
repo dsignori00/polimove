@@ -1,8 +1,8 @@
 %% FOV
 
-[fov.cam_x,fov.cam_y]  = compute_fov(85,0);
-[fov.lid_x,fov.lid_y]  = compute_fov(10,179);
-[fov.rad_x,fov.rad_y]  = compute_fov(90,0);
+[FoV.cam_x,FoV.cam_y]  = compute_fov(85,0);
+[FoV.lid_x,FoV.lid_y]  = compute_fov(10,179);
+[FoV.rad_x,FoV.rad_y]  = compute_fov(90,0);
 
 [range.x_25m, range.y_25m]   = calculate_ellipse(25,25,0,0); 
 [range.x_50m, range.y_50m]   = calculate_ellipse(50,50,0,0); 
@@ -10,7 +10,7 @@
 [range.x_100m, range.y_100m] = calculate_ellipse(100,100,0,0); 
 
 %% FIGURE
-fov_fig = figure('Name','FOV');
+fov_fig = figure('Name','FOV', 'NumberTitle','off');
 b = b + 1;
 c(b) = uicontrol('Style','pushbutton', ...
     'String','Refresh', ...
@@ -20,7 +20,7 @@ c(b) = uicontrol('Style','pushbutton', ...
 
 function fovButtonPushed(~,~)
     sensors  = evalin('base','sensors');
-    fov      = evalin('base','fov');
+    FoV      = evalin('base','FoV');
     range    = evalin('base','range');
     ax       = evalin('base','ax');
     col      = evalin('base','col');
@@ -51,11 +51,11 @@ function fovButtonPushed(~,~)
     end
 
     % FOV
-    plot(fov.rad_y,  fov.rad_x,'-','Color', col.radar,'HandleVisibility','off')
-    plot(fov.rad_y, -fov.rad_x,'-','Color', col.radar,'HandleVisibility','off')
-    plot(fov.lid_y,  fov.lid_x,'-','Color', col.lidar,'HandleVisibility','off')
-    plot(fov.cam_y,  fov.cam_x,'-','Color', col.camera,'HandleVisibility','off')
-    plot(fov.cam_y, -fov.cam_x,'-','Color', col.camera,'HandleVisibility','off')
+    plot(FoV.rad_y,  FoV.rad_x,'-','Color', col.radar,'HandleVisibility','off')
+    plot(FoV.rad_y, -FoV.rad_x,'-','Color', col.radar,'HandleVisibility','off')
+    plot(FoV.lid_y,  FoV.lid_x,'-','Color', col.lidar,'HandleVisibility','off')
+    plot(FoV.cam_y,  FoV.cam_x,'-','Color', col.camera,'HandleVisibility','off')
+    plot(FoV.cam_y, -FoV.cam_x,'-','Color', col.camera,'HandleVisibility','off')
 
     % Range rings
     plot(range.x_25m, range.y_25m,'--','Color',[.5 .5 .5],'HandleVisibility','off', 'LineWidth',0.8)
@@ -88,11 +88,11 @@ function fovButtonPushed(~,~)
     end
 
     % FOV
-    plot(fov.rad_y,  fov.rad_x,'-','Color', col.radar,'HandleVisibility','off')
-    plot(fov.rad_y, -fov.rad_x,'-','Color', col.radar,'HandleVisibility','off')
-    plot(fov.lid_y,  fov.lid_x,'-','Color', col.lidar,'HandleVisibility','off')
-    plot(fov.cam_y,  fov.cam_x,'-','Color', col.camera,'HandleVisibility','off')
-    plot(fov.cam_y, -fov.cam_x,'-','Color', col.camera,'HandleVisibility','off')
+    plot(FoV.rad_y,  FoV.rad_x,'-','Color', col.radar,'HandleVisibility','off')
+    plot(FoV.rad_y, -FoV.rad_x,'-','Color', col.radar,'HandleVisibility','off')
+    plot(FoV.lid_y,  FoV.lid_x,'-','Color', col.lidar,'HandleVisibility','off')
+    plot(FoV.cam_y,  FoV.cam_x,'-','Color', col.camera,'HandleVisibility','off')
+    plot(FoV.cam_y, -FoV.cam_x,'-','Color', col.camera,'HandleVisibility','off')
 
     % Range rings
     plot(range.x_25m, range.y_25m,'--','Color',[.5 .5 .5],'HandleVisibility','off', 'LineWidth',0.8)

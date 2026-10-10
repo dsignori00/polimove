@@ -2,8 +2,6 @@ clc; close all; clearvars -except log log_ref trajDatabase
 
 use_tt              = false;
 use_sim_ref         = false;
-show_error_series   = true;
-search_correlations = false;
 link_axes_mode      = 'all'; % 'none', 'figure', 'active', or 'all'
 
 %#ok<*UNRCH>
@@ -73,10 +71,6 @@ gt = load_ref(log, use_sim_ref, ~use_sim_ref, log_ref);
 cam_yolo.sens_stamp(cam_yolo.sens_stamp < 0) = NaN;
 cam_yolo.sens_stamp(cam_yolo.x_rel < 0) = NaN;
 
-% ego
-ego.speed_stamp = log.estimation.stamp__tot;
-ego.speed = log.estimation.vx;
-
 % target tracking
 if use_tt
     tt = load_tt(log);
@@ -100,14 +94,12 @@ process_measures;
 %% PLOTTING
 
 latency;
-time_series_map;
-time_series_cog;
-time_series_range;
-time_series_errors;
-% correlations;
-fit_gaussian;
-error_summary;
-sensors_fov;
+timeseries;
+errors;
+calibrations;
+gaussian;
+fov;
 map;
+% correlations;
 
 link_axes();

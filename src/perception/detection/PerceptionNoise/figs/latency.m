@@ -1,6 +1,6 @@
 %% LATENCY FIGURE
-figure('name','Detections - Latency')
-tiledlayout(4,1,'Padding','compact');
+figure('name','Latency', 'NumberTitle', 'off');
+tiledlayout(numel(sensors),1,'Padding','compact');
 
 for i = 1:numel(sensors)
     ax(f) = nexttile([1,1]); f=f+1; hold on;

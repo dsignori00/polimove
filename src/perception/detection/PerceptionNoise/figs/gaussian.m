@@ -33,6 +33,9 @@ fprintf('%-20s  %10s  %10s  %10s  %10s  %10s  %10s  %10s  %10s\n', ...
     'Sensor', 'sigma_x', 'sigma_y', 'R_xx', 'R_yy', 'sigma_yaw', 'R_yaw', 'sigma_v', 'R_vv');
 fprintf('%s\n', repmat('-', 1, 112));
 
+gaussian_fig = figure('Name','Noise Fit','NumberTitle','off', 'WindowStyle','docked','Color','w');
+gaussian_tabs = uitabgroup(gaussian_fig);
+
 for k = 1:numel(sensors_r)
 
     s        = sensors_r{k}.s;
@@ -42,10 +45,10 @@ for k = 1:numel(sensors_r)
 
     % Display name for tables and figure titles
     switch name
-        case 'lidar';  display_name = 'lidar clustering';
-        case 'radar';  display_name = 'radar';
-        case 'camera'; display_name = 'camera';
-        case 'pp';     display_name = 'lidar pointpillars';
+        case 'lidar';  display_name = 'LIDAR CLUSTERING';
+        case 'pp';     display_name = 'LIDAR POINTPILLARS';
+        case 'radar';  display_name = 'RADAR';
+        case 'camera'; display_name = 'CAMERA';
         otherwise;     display_name = name;
     end
 
@@ -170,9 +173,11 @@ for k = 1:numel(sensors_r)
     %% ----------------------------------------------------------
     % FIG 1: Gaussian fit
     % ----------------------------------------------------------
-    figure('Name', sprintf('Gaussian Fit - %s', upper(display_name)), ...
-           'NumberTitle', 'off', 'WindowStyle', 'docked', 'Color', 'w');
-    tl_g = tiledlayout(1, 3, 'Padding', 'compact', 'TileSpacing', 'loose');
+    sensor_tab = uitab(gaussian_tabs,'Title',display_name);
+    sensor_tabs = uitabgroup(sensor_tab);
+    fit_tab = uitab(sensor_tabs,'Title','pdf');
+    ellipse_tab = uitab(sensor_tabs,'Title','ellipse');
+    tl_g = tiledlayout(fit_tab,1,3,'Padding','compact','TileSpacing','loose');
 
     err_ch = {ex,      ey,      eyaw};
     mu_ch  = {mu_x,    mu_y,    mu_yaw};
@@ -234,10 +239,8 @@ for k = 1:numel(sensors_r)
     %% ----------------------------------------------------------
     % FIG 2: Confidence ellipse + density heatmap
     % ----------------------------------------------------------
-    figure('Name', sprintf('Confidence Ellipse - %s', upper(display_name)), ...
-           'NumberTitle', 'off', 'WindowStyle', 'docked', 'Color', 'w');
-
-    ax_e = axes('Position', [0.13 0.11 0.80 0.78]);
+    tl_e = tiledlayout(ellipse_tab,1,1,'Padding','compact');
+    ax_e = nexttile(tl_e);
     hold(ax_e,'on'); grid(ax_e,'on'); box(ax_e,'on'); axis(ax_e,'equal');
     ax_e.Layer = 'top';                 % griglia sopra la heatmap
     ax_e.GridColor = [0.4 0.4 0.4];
