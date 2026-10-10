@@ -8,7 +8,7 @@ error_tabs = uitabgroup(error_fig);
 map_tab = uitab(error_tabs,'Title','Map');
 map_layout = tiledlayout(map_tab,3,1,'Padding','compact','TileSpacing','compact');
 map_fields = {'x_map_err','y_map_err', 'yaw_map_err'};
-map_titles = {'x map','y map', 'yaw map'};
+map_label = {'x [m]','y [m]', 'yaw [deg]'};
 
 for j = 1:numel(map_fields)
     ax(f) = nexttile(map_layout); hold on; grid on; f=f+1; %#ok<SAGROW>
@@ -19,8 +19,7 @@ for j = 1:numel(map_fields)
             1,sensors{i}.col,sensors{i}.name)
     end
     xlim([0 inf]);
-    ylabel('error [m]');
-    title(map_titles{j})
+    ylabel(map_label{j});
     legend show
 end
 xlabel('timestamp [s]');
@@ -29,7 +28,7 @@ xlabel('timestamp [s]');
 cog_tab = uitab(error_tabs,'Title','CoG');
 cog_layout = tiledlayout(cog_tab,3,1,'Padding','compact','TileSpacing','compact');
 cog_fields = {'x_rel_err','y_rel_err','yaw_rel_err'};
-cog_titles = {'x cog','y cog', 'yaw cog'};
+cog_label = {'x [m]','y [m]', 'yaw [deg]'};
 
 for j = 1:numel(cog_fields)
     ax(f) = nexttile(cog_layout); hold on; grid on; f=f+1;
@@ -40,8 +39,7 @@ for j = 1:numel(cog_fields)
             1,sensors{i}.col,sensors{i}.name)
     end
     xlim([0 inf]);
-    ylabel('error [m]');
-    title(cog_titles{j})
+    ylabel(cog_label{j});
     legend show
 end
 xlabel('timestamp [s]');
