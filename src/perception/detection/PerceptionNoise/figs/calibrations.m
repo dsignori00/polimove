@@ -40,8 +40,17 @@ for i = 1:numel(sensors)
     p    = polyfit(x(ok),ey(ok),1);
     dpsi = atand(p(1));
     TX   = mean(ex(ok));
-    fprintf('%-8s  N = %5d | TX = %+.3f m | TY = %+.3f m | dpsi = %+.3f deg\n', ...
-        sensors{i}.name, nnz(ok), TX, p(2), dpsi);
+    ey_fit = polyval(p,x(ok));
+    ss_res = sum((ey(ok) - ey_fit).^2);
+    ss_tot = sum((ey(ok) - mean(ey(ok))).^2);
+    if ss_tot > 0
+        R2 = 1 - ss_res/ss_tot;
+    else
+        R2 = NaN;
+    end
+    fprintf(['%-8s  N = %5d | TX = %+.3f m | TY = %+.3f m | ' ...
+        'dpsi = %+.3f deg | R2 = %.3f\n'], ...
+        sensors{i}.name,nnz(ok),TX,p(2),dpsi,R2);
 
     sensor_tab = uitab(calibration_tabs,'Title',sensors{i}.name);
     sensor_layout = tiledlayout(sensor_tab,2,1, ...
@@ -49,24 +58,34 @@ for i = 1:numel(sensors)
 
     % Lateral error vs x
     nexttile(sensor_layout); hold on; grid on; box on
-    plot(x(ok),ey(ok),'.','Color',sensors{i}.col,'MarkerSize',6);
+    plot(x(ok),ey(ok),'.', ...
+        'Color',sensors{i}.col, ...
+        'MarkerSize',6, ...
+        'DisplayName','Measurement error');
     xf = linspace(min(x(ok)),max(x(ok)),2);
-    plot(xf,polyval(p,xf),'k-','LineWidth',2);
-    yline(0,'--k');
+    fit_label = sprintf(['Fit: $T_Y = %.3f\\,\\mathrm{m},\\;' ...
+        '\\Delta\\psi = %.2f^{\\circ},\\;R^2 = %.3f$'],p(2),dpsi,R2);
+    plot(xf,polyval(p,xf),'k-', ...
+        'LineWidth',2, ...
+        'DisplayName',fit_label);
+    yline(0,'--k','HandleVisibility','off');
     ylim([-1 1]); ylabel('y error [m]'); title([sensors{i}.name ' - lateral']);
-    legend('Measurement error', ...
-        sprintf('Fit: T_Y = %.3f m, \\Delta\\psi = %.2f deg',p(2),dpsi), ...
-        'Location','northwest');
+    legend('show','Location','northwest');
     xlabel('x relative [m]');
 
     % Longitudinal error vs time
     nexttile(sensor_layout); hold on; grid on; box on
     t = tq - t_gt(1);
-    plot(t(ok),ex(ok),'.','Color',sensors{i}.col,'MarkerSize',6);
-    yline(TX,'k-','LineWidth',2);
-    yline(0,'--k');
+    plot(t(ok),ex(ok),'.', ...
+        'Color',sensors{i}.col, ...
+        'MarkerSize',6, ...
+        'DisplayName','Measurement error');
+    mean_label = sprintf('Mean: $T_X = %.3f\\,\\mathrm{m}$',TX);
+    yline(TX,'k-', ...
+        'LineWidth',2, ...
+        'DisplayName',mean_label);
+    yline(0,'--k','HandleVisibility','off');
     ylim([-1 1]); ylabel('x error [m]'); title([sensors{i}.name ' - longitudinal']);
-    legend('Measurement error',sprintf('Mean: T_X = %.3f m',TX), ...
-        'Location','northwest');
+    legend('show','Location','northwest');
     xlabel('time [s]');
 end
