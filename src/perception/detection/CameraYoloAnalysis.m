@@ -20,7 +20,7 @@ addpath("../../common/plot/")
 addpath("../utils/")
 addpath("../../../common/graphic_tools/")
 normal_path = "../../bags";
-opp_path = "../opponent_gps/mat";
+opp_path = "../ground_truth/mat";
 % load_colors;
 graphics_options
 %% Load Data

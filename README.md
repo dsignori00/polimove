@@ -17,7 +17,7 @@ MATLAB project for Polimove perception/offline analysis, with scripts for:
 - `/Polimove.prj` — MATLAB Project file (recommended entry point).
 - `/src/perception/detection` — detection analysis scripts.
 - `/src/perception/tracking` — tracking analysis scripts.
-- `/src/perception/opponent_gps` — GPS conversion/alignment scripts.
+- `/src/perception/ground_truth` — ground truth construction scripts.
 - `/src/perception/utils` — shared perception utilities.
 - `/common` — shared plotting/constants/utilities.
 - `/databases` — track databases (`*.mat`) selectable by scripts.

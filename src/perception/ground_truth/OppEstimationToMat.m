@@ -50,7 +50,7 @@ end
 
 % load opponent estimation file
 if  (~exist('opp_log','var'))
-    opp_data_folder = fullfile(proj.RootFolder, 'src', 'perception', 'opponent_gps', 'opp_data', '*.csv');
+    opp_data_folder = fullfile(proj.RootFolder, 'src', 'perception', 'ground_truth', 'opp_data', '*.csv');
     [file,normal_path] = uigetfile(opp_data_folder,'Load opp localization');
     file = dir(fullfile(normal_path,file));
     files_list = string(file.name);
@@ -407,7 +407,7 @@ out.rho_dot = rho_dot;
 
 
 %% Save the output struct
-output_path = fullfile(proj.RootFolder, 'src', 'perception', 'opponent_gps', 'mat');
+output_path = fullfile(proj.RootFolder, 'src', 'perception', 'ground_truth', 'mat');
 
 try
     output_file = fullfile(output_path, file_name + ".mat");

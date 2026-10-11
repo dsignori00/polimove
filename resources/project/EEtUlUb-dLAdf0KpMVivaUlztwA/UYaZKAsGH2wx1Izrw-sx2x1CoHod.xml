@@ -1,2 +1,2 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Info Ref="src/perception/opponent_gps" Type="Relative"/>
+<Info Ref="src/perception/ground_truth" Type="Relative"/>

@@ -33,7 +33,7 @@
 
 
 %% Load Data
-clc; close all; clearvars -except ego v2v closest_idxs opp_idxs file_name out.clos_idx
+clc; close all; clearvars -except ego v2v closest_idxs opp_idxs file_name
 proj = currentProject;
 
 % load ego log
@@ -183,7 +183,7 @@ out.rho_dot = rho_dot;
 
 
 %% Save the output struct
-output_path = fullfile(proj.RootFolder, 'src', 'perception', 'opponent_gps', 'mat');
+output_path = fullfile(proj.RootFolder, 'src', 'perception', 'ground_truth', 'mat');
 
 try
     output_file = fullfile(output_path, file_name + ".mat");
