@@ -186,30 +186,33 @@ function refreshErrorSummaryButtonPushed(~,~)
     ylabel(ax_pos,'x rel [m]')
     legend(ax_pos,'show')
 
-    % --- Range-rate error (Radar only) ---
-    rho_dot_idx = find(cellfun(@(s) s.has_rho_dot, sensors),1);
+    % --- Range-rate error ---
+    rho_dot_indices = find(cellfun(@(s) s.has_rho_dot, sensors));
 
-    if ~isempty(rho_dot_idx)
+    if ~isempty(rho_dot_indices)
         ax_rho = subplot(2,2,2,'Parent',summary_tab);
         cla reset; hold(ax_rho,'on'); grid(ax_rho,'on')
 
-        si = sensors{rho_dot_idx}.s;
-
-        boxplot(ax_rho, si.rho_dot_err(si.idx), 'Symbol','')
-        for k = -1:2:1
-        yline(ax_rho,  k*si.rho_dot_std,  '--', ...
-            string(k) + 'σ =' + string(si.rho_dot_std), ...
-            'HandleVisibility','off', ...
-            'LineWidth', 1, ...
-            'Interpreter','none');
+        rho_dot_err = [];
+        rho_dot_group = {};
+        rho_dot_max_std = 0;
+        for i = reshape(rho_dot_indices,1,[])
+            si = sensors{i}.s;
+            e = si.rho_dot_err(si.idx);
+            rho_dot_err = [rho_dot_err; e]; %#ok<AGROW>
+            rho_dot_group = [rho_dot_group; ...
+                repmat({sensors{i}.name},numel(e),1)]; %#ok<AGROW>
+            rho_dot_max_std = max(rho_dot_max_std,si.rho_dot_std);
         end
-        ylim(ax_rho, [-2*si.rho_dot_std  2*si.rho_dot_std])
-        xlim(ax_rho, [0.8 1.2])
-        xticklabels(ax_rho,[])
+
+        boxplot(ax_rho,rho_dot_err,rho_dot_group,'Symbol','')
+        yline(ax_rho,0,'--','LineWidth',0.3,'HandleVisibility','off')
+        if isfinite(rho_dot_max_std) && rho_dot_max_std > 0
+            ylim(ax_rho,[-2*rho_dot_max_std 2*rho_dot_max_std])
+        end
 
         title(ax_rho,'Range Rate Error')
         ylabel(ax_rho,'[m/s]')
-        xlabel(ax_rho, sensors{rho_dot_idx}.name)
     end
 
     % --- Heading error ---
@@ -224,8 +227,8 @@ function refreshErrorSummaryButtonPushed(~,~)
         si = sensors{i}.s;
 
         e = si.yaw_map_err(si.idx);
-        yaw_err = [yaw_err; e];
-        group   = [group; repmat({sensors{i}.name}, numel(e), 1)];
+        yaw_err = [yaw_err; e]; %#ok<AGROW>
+        group   = [group; repmat({sensors{i}.name}, numel(e), 1)]; %#ok<AGROW>
 
         YawMaxStd = max(YawMaxStd, si.yaw_map_std);
     end

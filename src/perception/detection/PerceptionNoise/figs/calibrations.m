@@ -30,6 +30,13 @@ for i = 1:numel(sensors)
     [~,u] = unique(round(tq*1e3));            % remove duplicated scans
     ok = ok & ismember((1:numel(tq))',u);
 
+    if nnz(ok) < 2
+        warning('PerceptionNoise:InsufficientCalibrationSamples', ...
+            '%s has fewer than two valid calibration samples and was skipped.', ...
+            sensors{i}.name);
+        continue
+    end
+
     p    = polyfit(x(ok),ey(ok),1);
     dpsi = atand(p(1));
     TX   = mean(ex(ok));

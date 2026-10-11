@@ -25,7 +25,7 @@ pos_thr = 5.0;
 v_thr   = 2.0;
 yaw_thr = 30.0;
 
-% Use all sensors: lid_clust, rad_clust, cam_yolo, lid_pp
+% Use every configured analysis source, including target tracking when enabled.
 sensors_r = sensors;
 
 fprintf('\n===== R TIME ANALYSIS =====\n');
@@ -41,7 +41,7 @@ for k = 1:numel(sensors_r)
     s        = sensors_r{k}.s;
     col_k    = sensors_r{k}.col;
     name     = sensors_r{k}.name;
-    is_radar = strcmp(name, 'radar');
+    has_rho_dot = sensors_r{k}.has_rho_dot;
 
     % Display name for tables and figure titles
     switch name
@@ -49,6 +49,7 @@ for k = 1:numel(sensors_r)
         case 'pp';     display_name = 'LIDAR POINTPILLARS';
         case 'radar';  display_name = 'RADAR';
         case 'camera'; display_name = 'CAMERA';
+        case 'target tracking'; display_name = 'TARGET TRACKING';
         otherwise;     display_name = name;
     end
 
@@ -143,10 +144,10 @@ for k = 1:numel(sensors_r)
     end
 
     %% ----------------------------------------------------------
-    % 3. rho_dot for radar — fit on precomputed rho_dot_err
+    % 3. rho_dot for sources that provide it — fit on precomputed rho_dot_err
     % ----------------------------------------------------------
     sigma_vv = nan;  R_vv = nan;  mu_vv = nan;
-    if is_radar && isfield(s, 'rho_dot_err')
+    if has_rho_dot && isfield(s, 'rho_dot_err')
         e_vv = s.rho_dot_err(:, 1);
         valid_vv = ~isnan(e_vv) & abs(e_vv) < v_thr;
         e_vv = e_vv(valid_vv);
@@ -159,10 +160,10 @@ for k = 1:numel(sensors_r)
     end
 
     % Command window table
-    if is_radar && ~isnan(sigma_vv)
+    if has_rho_dot && ~isnan(sigma_vv)
         fprintf('%-20s  %10.4f  %10.4f  %10.4f  %10.4f  %10.4f  %10.4f  %10.4f  %10.4f\n', ...
             display_name, sigma_x, sigma_y, R_xx, R_yy, sigma_yaw, R_yaw, sigma_vv, R_vv);
-    elseif is_radar
+    elseif has_rho_dot
         fprintf('%-20s  %10.4f  %10.4f  %10.4f  %10.4f  %10.4f  %10.4f  %10s  %10s\n', ...
             display_name, sigma_x, sigma_y, R_xx, R_yy, sigma_yaw, R_yaw, 'n/a', 'n/a');
     else
