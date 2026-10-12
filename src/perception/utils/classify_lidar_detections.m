@@ -6,6 +6,14 @@ function [correctMask, falsePositiveMask, validMask] = ...
 % A detection is correct when its closest ground-truth sample is within the
 % temporal gate and its map position is less than spatialGate meters away.
 
+    if isvector(measurementStamp) && ...
+            numel(measurementStamp) == size(measurementX, 1)
+        measurementStamp = repmat(measurementStamp(:), ...
+            1, size(measurementX, 2));
+    elseif ~isequal(size(measurementStamp), size(measurementX))
+        error('Measurement timestamps and positions have incompatible sizes.');
+    end
+
     validMask = isfinite(measurementStamp) & isfinite(measurementX) & ...
         isfinite(measurementY);
     correctMask = false(size(validMask));
