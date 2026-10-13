@@ -1,9 +1,7 @@
 clc; close all; clearvars -except log log_ref trajDatabase
 
-use_tt              = false;
+use_tt              = true;
 use_sim_ref         = false;
-show_error_series   = true;
-search_correlations = false;
 link_axes_mode      = 'all'; % 'none', 'figure', 'active', or 'all'
 
 %#ok<*UNRCH>
@@ -73,10 +71,6 @@ gt = load_ref(log, use_sim_ref, ~use_sim_ref, log_ref);
 cam_yolo.sens_stamp(cam_yolo.sens_stamp < 0) = NaN;
 cam_yolo.sens_stamp(cam_yolo.x_rel < 0) = NaN;
 
-% ego
-ego.speed_stamp = log.estimation.stamp__tot;
-ego.speed = log.estimation.vx;
-
 % target tracking
 if use_tt
     tt = load_tt(log);
@@ -86,11 +80,31 @@ end
 %% PROCESSING 
 
 sensors = { ...
-    struct('id', 'lid_clust', 's', lid_clust, 'col', col.lidar,   'name', 'lidar',  'has_rho_dot', false), ...
-    struct('id', 'rad_clust', 's', rad_clust, 'col', col.radar,   'name', 'radar',  'has_rho_dot', true), ...
-    struct('id', 'cam_yolo',  's', cam_yolo,  'col', col.camera,  'name', 'camera', 'has_rho_dot', false), ...
-    struct('id', 'lid_pp',    's', lid_pp,    'col', col.pp,      'name', 'pp',     'has_rho_dot', false) ...
+    struct('id', 'lid_clust', 's', lid_clust, 'col', col.lidar,  'name', 'lidar',  'has_rho_dot', false, 'has_latency', true), ...
+    struct('id', 'rad_clust', 's', rad_clust, 'col', col.radar,  'name', 'radar',  'has_rho_dot', true,  'has_latency', true), ...
+    struct('id', 'cam_yolo',  's', cam_yolo,  'col', col.camera, 'name', 'camera', 'has_rho_dot', false, 'has_latency', true), ...
+    struct('id', 'lid_pp',    's', lid_pp,    'col', col.pp,     'name', 'pp',     'has_rho_dot', false, 'has_latency', true) ...
 };
+
+if use_tt
+    tt_analysis = tt;
+    tt_analysis.sens_stamp = tt.stamp;
+    tt_analysis.z_map = nan(size(tt.x_map));
+    tt_analysis.z_rel = nan(size(tt.x_rel));
+
+    if ~isempty(tt.x_map) && any(isfinite(tt.x_map(:,1)))
+        sensors{end+1} = struct( ...
+            'id','tt', ...
+            's',tt_analysis, ...
+            'col',col.tt, ...
+            'name','target tracking', ...
+            'has_rho_dot',true, ...
+            'has_latency',false);
+    else
+        warning('PerceptionNoise:NoTargetTrack', ...
+            'Target tracking is enabled, but the primary track has no valid samples.');
+    end
+end
 
 fields = {'stamp','sens_stamp','x_map','y_map','z_map','yaw_map','x_rel','y_rel','z_rel','yaw_rel'};
 interpFields = {'x_map','y_map','x_rel','y_rel','yaw_map','yaw_rel'};
@@ -100,14 +114,12 @@ process_measures;
 %% PLOTTING
 
 latency;
-time_series_map;
-time_series_cog;
-time_series_range;
-time_series_errors;
-% correlations;
-fit_gaussian;
-error_summary;
-sensors_fov;
+timeseries;
+errors;
+calibrations;
+gaussian;
+fov;
 map;
+% correlations;
 
 link_axes();

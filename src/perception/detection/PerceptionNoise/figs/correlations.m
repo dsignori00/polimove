@@ -16,10 +16,6 @@ corr_name  = 'range [m]';
 corr_y_lim = [0 100]; 
 
 %% CORRELATION
-if ~search_correlations
-    return;
-end
-
 corr_stamp = gt.stamp;
 
 for k = 1:numel(sensors)

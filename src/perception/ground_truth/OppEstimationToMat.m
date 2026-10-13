@@ -29,6 +29,8 @@
 % rho_dot                   % range rate (relative speed)
 % clos_idx                  % traj server closest idx
 % lap                       % lap counter
+% ref_offset                % reference point offset to the vehicle center convention [m]
+
 
 % NOTE: for UTM conversion, install following add-on
 % https://github.com/geographiclib/geographiclib-octave
@@ -48,7 +50,7 @@ end
 
 % load opponent estimation file
 if  (~exist('opp_log','var'))
-    opp_data_folder = fullfile(proj.RootFolder, 'src', 'perception', 'opponent_gps', 'opp_data', '*.csv');
+    opp_data_folder = fullfile(proj.RootFolder, 'src', 'perception', 'ground_truth', 'opp_data', '*.csv');
     [file,normal_path] = uigetfile(opp_data_folder,'Load opp localization');
     file = dir(fullfile(normal_path,file));
     files_list = string(file.name);
@@ -117,7 +119,7 @@ switch(opp_id)
         out.yaw_map = unwrap(opp_log.heading);
         out.speed = opp_log.vx;
         out.ax = opp_log.ax;
-
+        out.ref_offset = 0.0;
     case 3
         ref_sys = "lla";
         opp_lat0 = 44.344351;
@@ -129,6 +131,8 @@ switch(opp_id)
         out.yaw_map = unwrap(opp_log.yaw_rad);
         out.speed = opp_log.vx_mps;
         out.ax = opp_log.ax_mps2;
+        out.ref_offset = 0.0;
+
 
     case 6
         ref_sys = "utm";
@@ -141,6 +145,7 @@ switch(opp_id)
         out.yaw_map = unwrap(opp_log.yaw);
         out.speed = opp_log.vx;
         out.ax = opp_log.ax;
+        out.ref_offset = 0.0;
 
     case 33
         ref_sys = "lla";
@@ -153,6 +158,7 @@ switch(opp_id)
         out.yaw_map = unwrap(opp_log.heading());
         out.speed = opp_log.vx;
         out.ax = opp_log.ax;
+        out.ref_offset = 0.0;
 
     case 71
         ref_sys = "lla";
@@ -165,6 +171,7 @@ switch(opp_id)
         out.yaw_map = unwrap(opp_log.yaw);
         out.speed = opp_log.vel_x;
         out.ax = opp_log.ax;
+        out.ref_offset = 0.0;
 
 end
 
@@ -334,6 +341,12 @@ if (~exist('out.clos_idx','var'))
     out.lap = assign_lap(opp_idx);
 end
 
+%% Reference offset correction
+
+out.x_map(opp_idxs) = out.x_map(opp_idxs) + out.ref_offset*cos(ego_yaw_map(closest_idxs));
+out.y_map(opp_idxs) = out.y_map(opp_idxs) + out.ref_offset*sin(ego_yaw_map(closest_idxs));
+
+
 %% Relative metrics computation
 
 dx = out.x_map(opp_idxs) - ego_x_map(closest_idxs);
@@ -394,7 +407,7 @@ out.rho_dot = rho_dot;
 
 
 %% Save the output struct
-output_path = fullfile(proj.RootFolder, 'src', 'perception', 'opponent_gps', 'mat');
+output_path = fullfile(proj.RootFolder, 'src', 'perception', 'ground_truth', 'mat');
 
 try
     output_file = fullfile(output_path, file_name + ".mat");

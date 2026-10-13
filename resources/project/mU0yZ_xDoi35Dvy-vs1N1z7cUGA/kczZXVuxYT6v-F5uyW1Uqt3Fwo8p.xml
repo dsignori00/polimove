@@ -1,2 +1,2 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Info location="opponent_gps" type="File"/>
+<Info location="ground_truth" type="File"/>

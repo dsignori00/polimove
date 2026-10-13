@@ -5,7 +5,7 @@ link_axes_mode = 'all'; % 'none', 'figure', or 'all'
 
 use_ref     = false;
 use_sim_ref = false;
-compare     = false;
+compare     = true;
 compare2    = false;
 
 opp_idx     = 1;
@@ -161,7 +161,8 @@ state_cog;
 range;
 speed_acc;
 map;
-icp;
+rts;
+% icp;
 % covariance;
 % error_analysis;
 % imm;

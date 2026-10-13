@@ -2,7 +2,7 @@
 %#ok<*INUSD>
 
 %% MAP
-fig = figure('name','MAP');
+fig = figure('name','MAP', 'NumberTitle','off');
 
 % Button
 b = b + 1;
