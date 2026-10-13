@@ -98,7 +98,8 @@ for rts_k = 1:numel(rts_logs)
     if ~isfield(rts_Lk, 'perception__opponents_history')
         rts_problem = sprintf('"%s" non ha perception__opponents_history.', rts_names{rts_k});
         if rts_k == 1
-            error('rts:PrimaryHistoryMissing', 'rts: %s Il log primario e'' necessario.', rts_problem);
+            warning('rts:PrimaryHistoryMissing', 'rts: %s Il log primario e'' necessario.', rts_problem);
+            return;
         end
         warning('rts:SecondaryHistoryMissing', 'rts: %s Log saltato.', rts_problem);
         continue;

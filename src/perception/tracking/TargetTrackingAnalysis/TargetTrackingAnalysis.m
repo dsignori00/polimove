@@ -5,7 +5,7 @@ link_axes_mode = 'all'; % 'none', 'figure', or 'all'
 
 use_ref     = false;
 use_sim_ref = false;
-compare     = true;
+compare     = false;
 compare2    = false;
 
 opp_idx     = 1;
