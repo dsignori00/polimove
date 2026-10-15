@@ -1,7 +1,7 @@
 close all
 clearvars -except log log2 trajDatabase gt ego ego2 rad1 rad2 track
 
-ground_truth = false;
+ground_truth = true;
 compare      = false;
 
 BRIDGE_POSITION.THRESHOLD = 3;
@@ -68,6 +68,7 @@ DateTime = datetime(log.time_offset_nsec,'ConvertFrom','epochtime', ...
 %% NAMING
 
 set(0,'DefaultFigureWindowStyle','docked');
+set(0,'DefaultFigureVisible','on');
 set(0,'DefaultTextInterpreter','none');
 set(0,'DefaultLegendInterpreter','none');
 set(0,'DefaultLineLineWidth',2);
@@ -261,6 +262,7 @@ end
 
 radar_timeseries;
 detection_count;
+radar_stiffness;
 radar_map;
 
 linkaxes(ax,'x');
