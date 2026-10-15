@@ -181,7 +181,7 @@ out.rho_dot = rho_dot;
 output_path = fullfile(proj.RootFolder, 'src', 'perception', 'ground_truth', 'mat');
 [~, name, ~] = fileparts(v2v_file); 
 parts = split(name, '_');
-file_name = parts(1) + "_" + parts(5) + "_" + parts(3);
+file_name = parts(1) + "_" + parts(4) + "_" + parts(5);
 
 try
     output_file = fullfile(output_path, file_name + ".mat");
