@@ -18,7 +18,7 @@ for k = 1:numel(files)
     input_file = fullfile(files(k).folder, files(k).name);
 
     try
-        data = load(input_file);
+        data = load(input_file, 'out');
 
         if ~isfield(data, 'out')
             warning("Skipping %s: variable 'out' not found.", input_file);

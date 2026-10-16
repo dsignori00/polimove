@@ -30,14 +30,14 @@ if(~exist('trajDatabase','var'))
     if(isempty(trajDatabase))
         error('No database selected');
     else
-        load(trajDatabase);
+        load(trajDatabase, 'trajDatabase');
     end
 end
 
 % load log
 if (~exist('log','var'))
     [file,path] = uigetfile(fullfile(normal_path,'*.mat'),'Load log');
-    load(fullfile(path,file));
+    load(fullfile(path,file), 'log');
 end
 name1 = 'new';
 
@@ -48,7 +48,7 @@ if(compare)
         if isequal(file, 0)  
         disp('User canceled file selection.');
         else
-        tmp = load(fullfile(path,file));
+        tmp = load(fullfile(path,file), 'log');
         log_2 = tmp.log;
         clearvars tmp;
         end
@@ -63,7 +63,7 @@ if(compare2)
         if isequal(file, 0)  
         disp('User canceled file selection.');
         else
-        tmp = load(fullfile(path,file));
+        tmp = load(fullfile(path,file), 'log');
         log_3 = tmp.log;
         clearvars tmp;
         end
@@ -75,7 +75,7 @@ end
 if(use_ref)
     if  (~exist('log_ref','var') || isempty(log_ref))
         [file,path] = uigetfile(fullfile(opp_dir,'*.mat'),'Load ground truth');
-        tmp = load(fullfile(path,file));
+        tmp = load(fullfile(path,file), 'out');
         log_ref = tmp.out;
         clearvars tmp;
     end

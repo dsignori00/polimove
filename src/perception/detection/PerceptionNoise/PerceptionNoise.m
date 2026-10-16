@@ -15,7 +15,7 @@ if(~exist('trajDatabase','var'))
     if(isempty(trajDatabase))
         error('No database selected');
     else
-        load(trajDatabase);
+        load(trajDatabase, 'trajDatabase');
     end
 end
 
@@ -25,7 +25,7 @@ if (~exist('log','var'))
     if isequal(file, 0)
         error('No log selected');
     end
-    load(fullfile(path,file));
+    load(fullfile(path,file), 'log');
 end
 
 % load ref
@@ -35,7 +35,9 @@ if(~use_sim_ref)
         if isequal(file, 0)
             error('No ground truth selected');
         end
-        tmp = load(fullfile(path_dir,file));
+        mat_file = fullfile(path_dir,file);
+        variables = whos('-file', mat_file);
+        tmp = load(mat_file, variables(1).name);
         fields = fieldnames(tmp);
         log_ref = tmp.(fields{1});
         clearvars tmp;
@@ -113,13 +115,13 @@ process_measures;
 
 %% PLOTTING
 
-latency;
-timeseries;
+% latency;
+% timeseries;
 errors;
 calibrations;
-gaussian;
-fov;
-map;
+% gaussian;
+% fov;
+% map;
 % correlations;
 
 link_axes();

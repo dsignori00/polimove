@@ -27,7 +27,7 @@ if ~exist('trajDatabase', 'var')
     if isempty(trajDatabase)
         error('No database selected');
     end
-    load(trajDatabase);
+    load(trajDatabase, 'trajDatabase');
 end
 
 % Load primary log.
@@ -36,7 +36,7 @@ if ~exist('log', 'var')
     if isequal(file, 0)
         error('No log selected');
     end
-    load(fullfile(path, file));
+    load(fullfile(path, file), 'log');
 end
 
 % Load comparison log.
@@ -45,7 +45,7 @@ if compare && ~exist('log2', 'var')
     if isequal(file, 0)
         error('No comparison log selected');
     end
-    tmp = load(fullfile(path, file));
+    tmp = load(fullfile(path, file), 'log');
     log2 = tmp.log;
 end
 
@@ -55,7 +55,7 @@ if ground_truth && ~exist('gt', 'var')
     if isequal(file, 0)
         error('No ground truth log selected');
     end
-    tmp = load(fullfile(path, file));
+    tmp = load(fullfile(path, file), 'out');
     gt = tmp.out;
 end
 

@@ -10,7 +10,7 @@ if(~exist('traj_db','var'))
     if(isempty(trajDatabase))
         error('No database selected');
     else
-        tmp = load(trajDatabase);
+        tmp = load(trajDatabase, 'trajDatabase');
         traj_db = tmp.trajDatabase;
     end
 end
@@ -18,7 +18,9 @@ end
 % load ref
 if (~exist('log_ref','var'))
 [file,path_dir] = uigetfile(fullfile(get_gt_dir(),'*.mat'),'Load ground truth mat');
-tmp = load(fullfile(path_dir,file));
+mat_file = fullfile(path_dir,file);
+variables = whos('-file', mat_file);
+tmp = load(mat_file, variables(1).name);
 fields = fieldnames(tmp);
 log_ref = tmp.(fields{1});
 clearvars tmp;

@@ -39,7 +39,7 @@ proj = currentProject;
 % load ego log
 if (~exist('ego','var'))
     [file,normal_path] = uigetfile(fullfile(get_bags_dir(),'*.mat'),'Load ego mat');
-    tmp = load(fullfile(normal_path,file));
+    tmp = load(fullfile(normal_path,file), 'log');
     ego = tmp.log;
     clearvars tmp;
 end
@@ -47,7 +47,7 @@ end
 % load v2v estimation file
 if (~exist('v2v','var'))
     [v2v_file,normal_path] = uigetfile(fullfile(get_bags_dir(),'*.mat'),'Load v2v mat');
-    tmp = load(fullfile(normal_path,v2v_file));
+    tmp = load(fullfile(normal_path,v2v_file), 'log');
     v2v = tmp.log;
     clearvars tmp;
 end

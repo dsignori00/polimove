@@ -52,7 +52,7 @@ files_list = string({files.name});
 % load ego log
 if (~exist('ego','var'))
     [file,normal_path] = uigetfile(fullfile(get_bags_dir(),'*.mat'),'Load ego mat');
-    tmp = load(fullfile(normal_path,file));
+    tmp = load(fullfile(normal_path,file), 'log');
     ego = tmp.log;
     clearvars tmp;
 end
@@ -313,25 +313,25 @@ switch (track_id)
         lat0    = 38.711552404047440;
         lon0    = -84.916952255229230;
         alt0    = 182.9;
-        load("Ks.mat");
+        load("Ks.mat", 'trajDatabase');
     case 2
         % IMS
         lat0    =  39.793145808368780;	
         lon0    = -86.236780583175840;
         alt0    =  221.8500178;
-        load("Ims.mat");
+        load("Ims.mat", 'trajDatabase');
     case 3
         % LVMS
         lat0    =  36.272904305728540;
         lon0    = -115.0110198639284+1e-5;
         alt0    =  594.6250982;
-        load("Lvms.mat");
+        load("Lvms.mat", 'trajDatabase');
     case 4
         % YasMarina
         lat0 = 24.470253250335873;
         lon0 = 54.605170726971520;
         alt0 = 182.9;
-        load("YasMarina.mat");
+        load("YasMarina.mat", 'trajDatabase');
     case 0
         error("Quit");
     otherwise

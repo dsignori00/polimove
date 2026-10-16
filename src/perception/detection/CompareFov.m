@@ -19,27 +19,27 @@ if(~exist('trajDatabase','var'))
     if(isempty(trajDatabase))
         error('No database selected');
     else
-        load(trajDatabase);
+        load(trajDatabase, 'trajDatabase');
     end
 end
 
 % load log
 if (~exist('log','var'))
     [file,path] = uigetfile(fullfile(get_bags_dir(),'*.mat'),'Load log');
-    load(fullfile(path,file));
+    load(fullfile(path,file), 'log');
 end
 
 % load log2
 if (compare && ~exist('log2','var'))
     [file,path] = uigetfile(fullfile(get_bags_dir(),'*.mat'),'Load log 2');
-    tmp = load(fullfile(path,file));
+    tmp = load(fullfile(path,file), 'log');
     log2 = tmp.log;
 end
 
 if(ground_truth)
     if (~exist('log_ref','var'))
         [file,path] = uigetfile(fullfile(get_gt_dir(),'*.mat'),'Load ground truth log');
-        tmp = load(fullfile(path,file));
+        tmp = load(fullfile(path,file), 'out');
         log_ref = tmp.out;
     end
 else
