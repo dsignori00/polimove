@@ -159,8 +159,8 @@ for i = 1:numel(sensors)
 
     linkaxes([lateral_ax longitudinal_ax],'xy');
 
-    plotBearingCorrelation(correlation_tab,x,double(S.y_rel(:)),ey,ok, ...
-        sensors{i}.col,sensors{i}.name);
+    plotBearingCorrelations(correlation_tab,x,double(S.y_rel(:)), ...
+        ey,ex,ok,sensors{i}.col,sensors{i}.name);
 
     if strcmp(sensors{i}.id,'rad_clust') && isfield(log,'estimation')
         plotRadarStiffness(stiffness_tab,S,tq,x,x_ref,y_ref,ok, ...
@@ -168,47 +168,63 @@ for i = 1:numel(sensors)
     end
 end
 
-function plotBearingCorrelation(parent_tab,x_rel,y_rel,lateral_error, ...
-        valid,sensor_color,sensor_name)
-%PLOTBEARINGCORRELATION Plot lateral error against sine of target bearing.
+function plotBearingCorrelations(parent_tab,x_rel,y_rel,lateral_error, ...
+        longitudinal_error,valid,sensor_color,sensor_name)
+%PLOTBEARINGCORRELATIONS Plot position errors against sine of target bearing.
 
-range = hypot(x_rel,y_rel);
+target_range = hypot(x_rel,y_rel);
 valid = valid & isfinite(x_rel) & isfinite(y_rel) & ...
-    isfinite(lateral_error) & range > 0;
+    isfinite(lateral_error) & isfinite(longitudinal_error) & ...
+    target_range > 0;
 bearing_angle = atan2(y_rel(valid),x_rel(valid));
 sin_bearing = sin(bearing_angle);
 lateral_error = lateral_error(valid);
+longitudinal_error = longitudinal_error(valid);
 
-correlation_layout = tiledlayout(parent_tab,1,1, ...
+correlation_layout = tiledlayout(parent_tab,2,1, ...
     'Padding','compact','TileSpacing','compact');
-correlation_ax = nexttile(correlation_layout);
-hold(correlation_ax,'on');
-grid(correlation_ax,'on');
-box(correlation_ax,'on');
+lateral_ax = nexttile(correlation_layout);
+plotBearingErrorCorrelation(lateral_ax,sin_bearing,lateral_error, ...
+    sensor_color,[sensor_name ' - lateral'],'y error [m]');
 
-plot(correlation_ax,sin_bearing,lateral_error,'.', ...
+longitudinal_ax = nexttile(correlation_layout);
+plotBearingErrorCorrelation(longitudinal_ax,sin_bearing,longitudinal_error, ...
+    sensor_color,[sensor_name ' - longitudinal'],'x error [m]');
+
+linkaxes([lateral_ax longitudinal_ax],'xy');
+end
+
+function plotBearingErrorCorrelation(ax,sin_bearing,error_values, ...
+        sensor_color,plot_title,error_label)
+%PLOTBEARINGERRORCORRELATION Plot one error component and its linear fit.
+
+hold(ax,'on');
+grid(ax,'on');
+box(ax,'on');
+
+plot(ax,sin_bearing,error_values,'.', ...
     'Color',sensor_color,'MarkerSize',6, ...
     'DisplayName','Measurement error');
 
-model = fitLinearSensitivity(sin_bearing,lateral_error);
+model = fitLinearSensitivity(sin_bearing,error_values);
 if model.valid
     sin_bearing_fit = linspace(min(sin_bearing),max(sin_bearing),100);
     fit_label = sprintf('Fit: slope = %+.4f m, R^2 = %.3f', ...
         model.slope,model.r_squared);
-    plot(correlation_ax,sin_bearing_fit, ...
+    plot(ax,sin_bearing_fit, ...
         polyval(model.coefficients,sin_bearing_fit),'-', ...
         'Color',[0 0.4470 0.7410],'LineWidth',2, ...
         'DisplayName',fit_label);
 end
 
-xline(correlation_ax,0,'--k','HandleVisibility','off');
-yline(correlation_ax,0,'--k','HandleVisibility','off');
-xlim(correlation_ax,[-1 1]);
-ylim(correlation_ax,[-1 1]);
-xlabel(correlation_ax,'sin(bearing), bearing = atan2(y relative, x relative)');
-ylabel(correlation_ax,'y error [m]');
-title(correlation_ax,[sensor_name ' - lateral']);
-legend(correlation_ax,'show','Location','northwest');
+xline(ax,0,'--k','HandleVisibility','off');
+yline(ax,0,'--k','HandleVisibility','off');
+xlim(ax,[-1 1]);
+ylim(ax,[-1 1]);
+xlabel(ax,'sin(bearing), bearing = atan2(y relative, x relative)');
+ylabel(ax,error_label);
+title(ax,plot_title);
+legend(ax,'show','Location','northwest');
 end
 
 function plotRadarStiffness(parent_tab,sensor,tq,x_rel,x_ref,y_ref, ...
