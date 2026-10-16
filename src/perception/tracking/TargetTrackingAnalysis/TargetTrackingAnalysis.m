@@ -130,10 +130,10 @@ sensors = { ...
     struct('s', rad_clust, 'col', col.radar,   'name', 'radar'), ...
     struct('s', cam_yolo,  'col', col.camera,  'name', 'camera'), ...
 };
-
-if any(~isnan(v2v.sens_stamp(:)))
-    sensors{end+1} = struct('s', v2v, 'col', col.v2v, 'name', 'v2v');
-end
+%
+% if any(~isnan(v2v.sens_stamp(:)))
+%     sensors{end+1} = struct('s', v2v, 'col', col.v2v, 'name', 'v2v');
+% end
 
 if(use_ref || use_sim_ref)
     errors = process_states(gt, tt, err_thr, err_stats);
@@ -149,12 +149,32 @@ end
 %% PLOTTING
 
 % info;
+detections_figure = figure( ...
+    'Name','Detections', ...
+    'NumberTitle','off', ...
+    'Color','w');
+detections_tabs = uitabgroup(detections_figure);
+detections_parent = uitab(detections_tabs,'Title','Count');
 detections;
+latency_parent = uitab(detections_tabs,'Title','Latency');
 latency;
+clear detections_parent latency_parent
+
+time_series_figure = figure( ...
+    'Name','Time series', ...
+    'NumberTitle','off', ...
+    'Color','w');
+time_series_tabs = uitabgroup(time_series_figure);
+state_map_parent = uitab(time_series_tabs,'Title','Map');
 state_map;
+state_cog_parent = uitab(time_series_tabs,'Title','CoG');
 state_cog;
+range_parent = uitab(time_series_tabs,'Title','Range');
 range;
+speed_acc_parent = uitab(time_series_tabs,'Title','Speed and acceleration');
 speed_acc;
+clear state_map_parent state_cog_parent range_parent speed_acc_parent
+
 map;
 rts;
 % icp;

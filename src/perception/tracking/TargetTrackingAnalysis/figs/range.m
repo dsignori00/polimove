@@ -1,9 +1,16 @@
 %% RANGE
-figure('name', 'Filter - Range', 'NumberTitle', 'off');
-tiledlayout(2,1,'Padding','compact');
+if exist('range_parent','var') && isgraphics(range_parent,'uitab')
+    range_layout_parent = range_parent;
+else
+    range_figure = figure( ...
+        'Name','Filter - Range','NumberTitle','off','Color','w');
+    range_layout_parent = range_figure;
+end
+range_layout = tiledlayout(range_layout_parent,2,1, ...
+    'Padding','compact','TileSpacing','compact');
 
 % rho 
-ax(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile(range_layout,[1,1]); f=f+1; hold on;
 for i = 1:numel(sensors)
     s = sensors{i}.s;
     s.range = sqrt(s.x_rel.^2 + s.y_rel.^2);
@@ -29,7 +36,7 @@ end
 grid on; ylabel('range [m]'); ylim([0 200]); legend show;
 
 % rho dot
-ax(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile(range_layout,[1,1]); f=f+1; hold on;
 for i = 1:numel(sensors)
     s = sensors{i}.s;
     if isfield(s, 'rho_dot')

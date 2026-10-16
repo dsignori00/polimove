@@ -198,6 +198,7 @@ function refreshErrorSummaryButtonPushed(~,~)
     title(ax_pos,'Positional Errors')
     xlabel(ax_pos,'y rel [m]')
     ylabel(ax_pos,'x rel [m]')
+    set(ax_pos,'XDir','reverse')
     legend(ax_pos,'show')
 
     % --- Error distribution ---

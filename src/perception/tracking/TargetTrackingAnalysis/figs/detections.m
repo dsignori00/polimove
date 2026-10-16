@@ -1,6 +1,13 @@
 %% RANGE
-figure('name', 'Detections - Count', 'NumberTitle', 'off');
-tiledlayout(1,1,'Padding','compact');
+if exist('detections_parent','var') && isgraphics(detections_parent,'uitab')
+    detections_layout = tiledlayout(detections_parent,1,1, ...
+        'Padding','compact','TileSpacing','compact');
+else
+    detections_figure = figure( ...
+        'Name','Detections - Count','NumberTitle','off','Color','w');
+    detections_layout = tiledlayout(detections_figure,1,1, ...
+        'Padding','compact','TileSpacing','compact');
+end
 
 % % count
 % ax(f) = nexttile([1,1]); f=f+1; hold on;
@@ -59,7 +66,7 @@ tiledlayout(1,1,'Padding','compact');
 % ylabel('reprocessed measures [-]'); xlabel('timestamp [s]');
 
 % opponent count
-ax(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile(detections_layout,[1,1]); f=f+1; hold on;
 plot_tt(tt.stamp, tt.count, 1, col.tt, name1);
 if(compare); plot_tt(tt2.stamp, tt2.count, 1, col.tt2, name2); end
 if(compare2); plot_tt(tt3.stamp, tt3.count, 1, col.tt3, name3); end

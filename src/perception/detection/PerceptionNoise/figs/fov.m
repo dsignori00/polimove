@@ -41,6 +41,7 @@ function fovButtonPushed(~,~)
     hold on; grid on; axis equal
     title('FoV')
     xlabel('y [m]'); ylabel('x [m]')
+    set(ax1,'XDir','reverse')
 
     for k = 1:numel(sensors)
         s = sensors{k}.s;
@@ -73,6 +74,7 @@ function fovButtonPushed(~,~)
     hold on; grid on; axis equal
     title('Detection Error')
     xlabel('y [m]'); ylabel('x [m]')
+    set(ax2,'XDir','reverse')
 
     markers = {'o','square','^','diamond'};
 

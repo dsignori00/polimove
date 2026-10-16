@@ -189,6 +189,7 @@ function fovButtonPushed(~,~)
     xlabel('y[m]')
     ylabel('x[m]')
     axis equal
+    set(gca,'XDir','reverse')
 
     plot(cam_yolo.y_rel(t1_cam_yolo:tend_cam_yolo),cam_yolo.x_rel(t1_cam_yolo:tend_cam_yolo),'*','Color',col.camera,'DisplayName',NAME_1+"yolo")
     plot(rad_clust.y_rel(t1_rad_clust:tend_rad_clust),rad_clust.x_rel(t1_rad_clust:tend_rad_clust),'*','Color',col.radar,'DisplayName',NAME_1+"radar")

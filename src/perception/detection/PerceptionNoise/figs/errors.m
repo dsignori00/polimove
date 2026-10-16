@@ -79,6 +79,87 @@ if has_range_rate
 end
 xlabel('timestamp [s]');
 
+% ---------------- BEV ----------------
+bev_tab = uitab(error_tabs,'Title','BEV');
+bev_tabs = uitabgroup(bev_tab);
+
+quadrant_titles = {'Front left','Front right','Rear left','Rear right'};
+
+for i = 1:numel(sensors)
+    s = sensors{i}.s;
+
+    sensor_tab = uitab(bev_tabs,'Title',sensors{i}.name);
+    sensor_layout = tiledlayout(sensor_tab,2,2, ...
+        'Padding','compact','TileSpacing','compact');
+
+    longitudinal_error = s.x_rel_err(:,1);
+    lateral_error = s.y_rel_err(:,1);
+    longitudinal_position = s.x_rel_gt(:,1);
+    lateral_position = s.y_rel_gt(:,1);
+
+    valid = position_gate(s,err_thr) & ...
+        isfinite(longitudinal_error) & isfinite(lateral_error) & ...
+        isfinite(longitudinal_position) & isfinite(lateral_position);
+
+    quadrant_masks = { ...
+        valid & longitudinal_position >= 0 & lateral_position >= 0, ...
+        valid & longitudinal_position >= 0 & lateral_position < 0, ...
+        valid & longitudinal_position < 0 & lateral_position >= 0, ...
+        valid & longitudinal_position < 0 & lateral_position < 0};
+
+    sensor_bev_axes = gobjects(1,numel(quadrant_masks));
+    for j = 1:numel(quadrant_masks)
+        sensor_bev_axes(j) = nexttile(sensor_layout);
+        hold(sensor_bev_axes(j),'on');
+        grid(sensor_bev_axes(j),'on');
+        box(sensor_bev_axes(j),'on');
+
+        idx = quadrant_masks{j};
+        plot(sensor_bev_axes(j),lateral_error(idx),longitudinal_error(idx),'.', ...
+            'Color',sensors{i}.col,'MarkerSize',8, ...
+            'HandleVisibility','off');
+
+        mean_lateral_error = mean(lateral_error(idx));
+        mean_longitudinal_error = mean(longitudinal_error(idx));
+        if any(idx)
+            plot(sensor_bev_axes(j),mean_lateral_error,mean_longitudinal_error, ...
+                'x','MarkerSize',9,'LineWidth',2, ...
+                'Color',sensors{i}.col, ...
+                'DisplayName',sprintf('Mean: lat %.3f m, long %.3f m', ...
+                mean_lateral_error,mean_longitudinal_error));
+        end
+        plot(sensor_bev_axes(j),0,0,'+k','MarkerSize',10,'LineWidth',1.5, ...
+            'HandleVisibility','off');
+
+        xline(sensor_bev_axes(j),0,'--k','LineWidth',0.3, ...
+            'HandleVisibility','off');
+        yline(sensor_bev_axes(j),0,'--k','LineWidth',0.3, ...
+            'HandleVisibility','off');
+        axis(sensor_bev_axes(j),'equal');
+        title(sensor_bev_axes(j),sprintf('%s (N = %d)', ...
+            quadrant_titles{j},nnz(idx)));
+        xlabel(sensor_bev_axes(j),'lateral error [m]');
+        ylabel(sensor_bev_axes(j),'longitudinal error [m]');
+        legend(sensor_bev_axes(j),'show','Location','northwest');
+    end
+
+    sensor_errors = [lateral_error(valid); longitudinal_error(valid)];
+    if isempty(sensor_errors)
+        error_limit = 1;
+    else
+        error_limit = max(abs(sensor_errors));
+        if ~isfinite(error_limit) || error_limit == 0
+            error_limit = 1;
+        else
+            error_limit = 1.05*error_limit;
+        end
+    end
+    set(sensor_bev_axes,'XDir','reverse', ...
+        'XLim',[-error_limit error_limit], ...
+        'YLim',[-error_limit error_limit]);
+    linkaxes(sensor_bev_axes,'xy');
+end
+
 function err = gated_error(sensor, field, err_thr)
     gate = position_gate(sensor,err_thr);
     err = sensor.(field)(:,1);
@@ -184,6 +265,7 @@ function refreshErrorSummaryButtonPushed(~,~)
     title(ax_pos,'Positional Errors')
     xlabel(ax_pos,'y rel [m]')
     ylabel(ax_pos,'x rel [m]')
+    set(ax_pos,'XDir','reverse')
     legend(ax_pos,'show')
 
     % --- Range-rate error ---

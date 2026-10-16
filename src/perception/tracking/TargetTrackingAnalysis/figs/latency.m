@@ -1,5 +1,11 @@
 %% LATENCY FIGURE
-figure('name','Detections - Latency', 'NumberTitle', 'off');
+if exist('latency_parent','var') && isgraphics(latency_parent,'uitab')
+    latency_layout_parent = latency_parent;
+else
+    latency_figure = figure( ...
+        'Name','Detections - Latency','NumberTitle','off','Color','w');
+    latency_layout_parent = latency_figure;
+end
 
 movingAverageWindowSeconds = 2;
 
@@ -15,10 +21,12 @@ for i = 1:numel(sensors)
     end
 end
 
-tiledlayout(max(1, numel(validSensors)),1,'Padding','compact');
+latency_layout = tiledlayout( ...
+    latency_layout_parent,max(1,numel(validSensors)),1, ...
+    'Padding','compact','TileSpacing','compact');
 
 for i = validSensors
-    ax(f) = nexttile([1,1]); f=f+1; hold on;
+    ax(f) = nexttile(latency_layout,[1,1]); f=f+1; hold on;
     s = sensors{i}.s;
 
     sensorStamp = s.sens_stamp;
