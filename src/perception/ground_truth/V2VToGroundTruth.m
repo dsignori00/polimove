@@ -11,8 +11,8 @@
 % latitude                  % latitude
 % longitude                 % longitude
 % bag_avg_frequency         % average publishing frequency
-% x_map                     % x in global reference frame (ENU)
-% y_map                     % y in global reference frame (ENU)
+% x_map                     % vehicle-center x in global reference frame (ENU)
+% y_map                     % vehicle-center y in global reference frame (ENU)
 % z_map                     % z in global reference frame (ENU)
 % yaw_map                   % heading in global reference frame 
 % timestamp_diff            % difference between ego and opp timestamp
@@ -30,11 +30,10 @@
 % rho_dot                   % range rate (relative speed)
 % clos_idx                  % traj server closest idx
 % lap                       % lap counter
-% ref_offset                % reference point offset to the vehicle center convention [m]
-
+% ref_offset                % CoG-to-center longitudinal correction [m]
 
 %% Load Data
-clc; close all; clearvars -except ego v2v closest_idxs opp_idxs v2v_file
+clc; close all; clearvars -except ego v2v closest_idxs opp_idxs v2v_file output_file_override
 proj = currentProject;
 
 % load ego log
@@ -75,10 +74,15 @@ end
 
 out.bag_timestamp = (v2v.estimation.bag_stamp)*10^9+double(v2v.time_offset_nsec);
 out.timestamp = (v2v.estimation.stamp__tot)*10^9+double(v2v.time_offset_nsec);
-out.x_map = v2v.estimation.x_cog;
-out.y_map = v2v.estimation.y_cog;
-out.z_map = v2v.estimation.z_cog;
 out.yaw_map = v2v.estimation.heading;
+
+% The CoG is 0.17 m behind the car center, so the center is 0.17 m
+% forward from the CoG along the vehicle body x-axis.
+CENTER_X_FROM_COG_M = 0.17;
+out.ref_offset = CENTER_X_FROM_COG_M;
+out.x_map = v2v.estimation.x_cog + CENTER_X_FROM_COG_M.*cos(out.yaw_map);
+out.y_map = v2v.estimation.y_cog + CENTER_X_FROM_COG_M.*sin(out.yaw_map);
+out.z_map = v2v.estimation.z_cog;
 out.roll = v2v.estimation.roll;
 out.pitch = v2v.estimation.pitch;
 out.speed = v2v.estimation.vx;
@@ -93,7 +97,6 @@ out.longitude = NaN(out.sz,1);
 out.virtual_speed = false;
 out.virtual_acc = false;
 out.virtual_yawrate = false;
-out.ref_offset = 0.0;
 out.clos_idx = v2v.estimation.closest_idx_ref;
 out.lap = v2v.estimation.lap_count;
 
@@ -184,7 +187,11 @@ parts = split(name, '_');
 file_name = parts(1) + "_" + parts(4) + "_" + parts(5);
 
 try
-    output_file = fullfile(output_path, file_name + ".mat");
+    if exist('output_file_override','var')
+        output_file = output_file_override;
+    else
+        output_file = fullfile(output_path, file_name + ".mat");
+    end
     save(output_file, 'out', '-v7.3');
     fprintf("File salvato correttamente: %s\n", output_file);
 catch e
