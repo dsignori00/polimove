@@ -115,13 +115,13 @@ process_measures;
 
 %% PLOTTING
 
-% latency;
-% timeseries;
+latency;
+timeseries;
 errors;
 calibrations;
-% gaussian;
-% fov;
-% map;
+gaussian;
+fov;
+map;
 % correlations;
 
 link_axes();
