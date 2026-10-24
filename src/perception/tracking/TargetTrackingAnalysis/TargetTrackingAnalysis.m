@@ -5,7 +5,7 @@ link_axes_mode = 'all'; % 'none', 'figure', or 'all'
 
 use_ref     = false;
 use_sim_ref = false;
-compare     = true;
+compare     = false;
 compare2    = false;
 
 opp_idx     = 1;
@@ -30,14 +30,14 @@ if(~exist('trajDatabase','var'))
     if(isempty(trajDatabase))
         error('No database selected');
     else
-        load(trajDatabase);
+        load(trajDatabase, 'trajDatabase');
     end
 end
 
 % load log
 if (~exist('log','var'))
     [file,path] = uigetfile(fullfile(normal_path,'*.mat'),'Load log');
-    load(fullfile(path,file));
+    load(fullfile(path,file), 'log');
 end
 name1 = 'new';
 
@@ -48,7 +48,7 @@ if(compare)
         if isequal(file, 0)  
         disp('User canceled file selection.');
         else
-        tmp = load(fullfile(path,file));
+        tmp = load(fullfile(path,file), 'log');
         log_2 = tmp.log;
         clearvars tmp;
         end
@@ -63,7 +63,7 @@ if(compare2)
         if isequal(file, 0)  
         disp('User canceled file selection.');
         else
-        tmp = load(fullfile(path,file));
+        tmp = load(fullfile(path,file), 'log');
         log_3 = tmp.log;
         clearvars tmp;
         end
@@ -75,7 +75,7 @@ end
 if(use_ref)
     if  (~exist('log_ref','var') || isempty(log_ref))
         [file,path] = uigetfile(fullfile(opp_dir,'*.mat'),'Load ground truth');
-        tmp = load(fullfile(path,file));
+        tmp = load(fullfile(path,file), 'out');
         log_ref = tmp.out;
         clearvars tmp;
     end
@@ -135,10 +135,10 @@ sensors = { ...
     struct('s', rad_clust, 'col', col.radar,   'name', 'radar'), ...
     struct('s', cam_yolo,  'col', col.camera,  'name', 'camera'), ...
 };
-
-if any(~isnan(v2v.sens_stamp(:)))
-    sensors{end+1} = struct('s', v2v, 'col', col.v2v, 'name', 'v2v');
-end
+%
+% if any(~isnan(v2v.sens_stamp(:)))
+%     sensors{end+1} = struct('s', v2v, 'col', col.v2v, 'name', 'v2v');
+% end
 
 if(use_ref || use_sim_ref)
     errors = process_states(gt, tt, err_thr, err_stats);
@@ -154,12 +154,32 @@ end
 %% PLOTTING
 
 % info;
+detections_figure = figure( ...
+    'Name','Detections', ...
+    'NumberTitle','off', ...
+    'Color','w');
+detections_tabs = uitabgroup(detections_figure);
+detections_parent = uitab(detections_tabs,'Title','Count');
 detections;
+latency_parent = uitab(detections_tabs,'Title','Latency');
 latency;
+clear detections_parent latency_parent
+
+time_series_figure = figure( ...
+    'Name','Time series', ...
+    'NumberTitle','off', ...
+    'Color','w');
+time_series_tabs = uitabgroup(time_series_figure);
+state_map_parent = uitab(time_series_tabs,'Title','Map');
 state_map;
+state_cog_parent = uitab(time_series_tabs,'Title','CoG');
 state_cog;
+range_parent = uitab(time_series_tabs,'Title','Range');
 range;
+speed_acc_parent = uitab(time_series_tabs,'Title','Speed and acceleration');
 speed_acc;
+clear state_map_parent state_cog_parent range_parent speed_acc_parent
+
 map;
 rts;
 % icp;

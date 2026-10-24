@@ -21,7 +21,7 @@ x_lim = [0 inf];
 % load log
 if (~exist('tt','var'))
     [file,path] = uigetfile(fullfile(get_bags_dir(),'*.mat'),'Load log');
-    load(fullfile(path,file));
+    load(fullfile(path,file), 'log');
     tt = load_tt(log);
 end
 
@@ -32,7 +32,7 @@ if(compare)
         if isequal(file, 0)  
         disp('User canceled file selection.');
         else
-        tmp = load(fullfile(path,file));
+        tmp = load(fullfile(path,file), 'log');
         log_2 = tmp.log;
         clearvars tmp;
         end

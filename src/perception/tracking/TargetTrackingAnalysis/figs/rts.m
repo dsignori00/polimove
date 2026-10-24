@@ -20,7 +20,7 @@ rts_period = 0.1;    % s tra un frame e il successivo in play
 rts_cosMin = 0.15;   % |cos(aspect)| minimo per le misure radar
 rts_rhoSign = 1;     % segno rho_dot
 rts_causalLightening = 0.45; % 0 = colore history, 1 = bianco
-rts_smoothGapMax = 0.30;     % s, interrompe la curva smooth tra segmenti lontani
+rts_smoothGapMax = 1.0;     % s, interrompe la curva smooth tra segmenti lontani
 if ~exist('rts_radarVx', 'var')
     rts_radarVx = false; % overlay misure radar rho_dot->vx
 end
@@ -98,7 +98,8 @@ for rts_k = 1:numel(rts_logs)
     if ~isfield(rts_Lk, 'perception__opponents_history')
         rts_problem = sprintf('"%s" non ha perception__opponents_history.', rts_names{rts_k});
         if rts_k == 1
-            error('rts:PrimaryHistoryMissing', 'rts: %s Il log primario e'' necessario.', rts_problem);
+            warning('rts:PrimaryHistoryMissing', 'rts: %s Il log primario e'' necessario.', rts_problem);
+            return;
         end
         warning('rts:SecondaryHistoryMissing', 'rts: %s Log saltato.', rts_problem);
         continue;

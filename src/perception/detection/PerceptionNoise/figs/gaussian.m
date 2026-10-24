@@ -285,7 +285,7 @@ for k = 1:numel(sensors_r)
         dens = dens / (n_pts * 2*pi*bw_x*bw_y);
 
         % Disegna la heatmap sotto tutto
-        imagesc(ax_e, xg, yg, dens);
+        imagesc(ax_e, yg, xg, dens.');
         set(ax_e, 'YDir', 'normal');
 
         % Colormap chiara->intensa basata sul colore del sensore
@@ -305,29 +305,30 @@ for k = 1:numel(sensors_r)
     % Ellisse 1sigma
     x1 = mu_x + sigma_x * cos(theta);
     y1 = mu_y + sigma_y * sin(theta);
-    plot(ax_e, x1, y1, '--', ...
+    plot(ax_e, y1, x1, '--', ...
         'Color', [0 0 0], 'LineWidth', 2.2, 'DisplayName', '1\sigma');
 
     % Ellisse 2sigma
     x2 = mu_x + 2*sigma_x * cos(theta);
     y2 = mu_y + 2*sigma_y * sin(theta);
-    plot(ax_e, x2, y2, '--', ...
+    plot(ax_e, y2, x2, '--', ...
         'Color', [0.25 0.25 0.25], 'LineWidth', 1.6, 'DisplayName', '2\sigma');
 
     % Media
-    plot(ax_e, mu_x, mu_y, '+', ...
+    plot(ax_e, mu_y, mu_x, '+', ...
         'Color', [0.9 0.1 0.1], 'MarkerSize', 11, 'LineWidth', 2.2, ...
         'DisplayName', '\mu');
 
-    xlabel(ax_e, 'e_x  [m]', 'Interpreter','tex', 'FontSize', 11);
-    ylabel(ax_e, 'e_y  [m]', 'Interpreter','tex', 'FontSize', 11);
+    xlabel(ax_e, 'e_y  [m]', 'Interpreter','tex', 'FontSize', 11);
+    ylabel(ax_e, 'e_x  [m]', 'Interpreter','tex', 'FontSize', 11);
+    set(ax_e, 'XDir', 'reverse');
     title(ax_e, sprintf('%s  —  confidence ellipse', upper(display_name)), ...
         'FontSize', 12, 'FontWeight','bold', 'Interpreter','none');
     legend(ax_e, 'show', 'Location','northeast', ...
         'Interpreter','tex', 'FontSize', 10, 'Box','on', 'Color','w');
 
-    xlim(ax_e, xr);
-    ylim(ax_e, yr);
+    xlim(ax_e, yr);
+    ylim(ax_e, xr);
 
 
 end

@@ -4,13 +4,13 @@ opp_dir = get_gt_dir();
 % load log
 if (~exist('log','var'))
     [file,path] = uigetfile(fullfile(normal_path,'*.mat'),'Load log');
-    load(fullfile(path,file));
+    load(fullfile(path,file), 'log');
 end
 
 % load log ref
 if  (~exist('log_ref','var'))
     [file,path] = uigetfile(fullfile(opp_dir,'*.mat'),'Load ground truth');
-    tmp = load(fullfile(path,file));
+    tmp = load(fullfile(path,file), 'out');
     log_ref = tmp.out;
     clearvars tmp;
 end

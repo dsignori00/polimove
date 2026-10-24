@@ -6,7 +6,7 @@ use_ref = true;
 % load log
 if (~exist('log', 'var'))
     [file, path] = uigetfile('*.mat', 'Load log');
-    load(fullfile(path, file));
+    load(fullfile(path, file), 'log');
 end
 
 DateTime = datetime(log.time_offset_nsec, 'ConvertFrom', 'epochtime', 'TicksPerSecond', 1e9, 'Format', 'dd-MMM-yyyy HH:mm:ss');

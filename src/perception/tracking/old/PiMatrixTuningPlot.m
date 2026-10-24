@@ -4,7 +4,7 @@ clearvars -except error_matrix
 % load log
 if (~exist('error_matrix','var'))
     [file,path] = uigetfile('*.mat','Load matrix');
-    load(fullfile(path,file));
+    load(fullfile(path,file), 'error_matrix');
 end
 
 tuning_set = [];

@@ -4,7 +4,7 @@ clc;
 % load log
 if (~exist('log', 'var'))
     [file, path] = uigetfile('*.mat', 'Load log');
-    load(fullfile(path, file));
+    load(fullfile(path, file), 'log');
 end
 
 % style

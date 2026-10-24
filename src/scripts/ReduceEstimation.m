@@ -4,7 +4,7 @@ bag_folder = get_bags_dir();
 
 if (~exist('log','var'))
     [file,path] = uigetfile(fullfile(bag_folder,'*.mat'),'Load log');
-    load(fullfile(path,file));
+    load(fullfile(path,file), 'log');
 end
 
 out.stamp = log.estimation.stamp__tot + log.time_offset_nsec*10^-9;

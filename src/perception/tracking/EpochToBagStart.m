@@ -6,7 +6,7 @@ clc
 
 if (~exist('log','var'))
     [file,path] = uigetfile(fullfile(get_bags_dir(),'*.mat'),'Load log');
-    load(fullfile(path,file));
+    load(fullfile(path,file), 'log');
 end
 
 log = normalize_stamps(log);

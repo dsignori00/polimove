@@ -1,9 +1,16 @@
 %% STATE FIGURE REL
-figure('name', 'Filter - CoG', 'NumberTitle', 'off');
-tiledlayout(3,1,'Padding','compact');
+if exist('state_cog_parent','var') && isgraphics(state_cog_parent,'uitab')
+    state_cog_layout_parent = state_cog_parent;
+else
+    state_cog_figure = figure( ...
+        'Name','Filter - CoG','NumberTitle','off','Color','w');
+    state_cog_layout_parent = state_cog_figure;
+end
+state_cog_layout = tiledlayout(state_cog_layout_parent,3,1, ...
+    'Padding','compact','TileSpacing','compact');
 
 % pos x
-ax(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile(state_cog_layout,[1,1]); f=f+1; hold on;
 for i = 1:numel(sensors)
     s = sensors{i}.s;
     plot_detections(s.sens_stamp, s.x_rel, s.max_det, sensors{i}.col, sensors{i}.name);
@@ -15,7 +22,7 @@ if(use_ref || use_sim_ref); plot(gt.stamp, gt.x_rel, 'Color',col.ref,'DisplayNam
 grid on; ylabel('x rel [m]'); legend show;
 
 % pos y
-ax(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile(state_cog_layout,[1,1]); f=f+1; hold on;
 for i = 1:numel(sensors)
     s = sensors{i}.s;
     plot_detections(s.sens_stamp, s.y_rel, s.max_det, sensors{i}.col, sensors{i}.name);
@@ -27,7 +34,7 @@ if(use_ref || use_sim_ref); plot(gt.stamp, gt.y_rel, 'Color',col.ref,'DisplayNam
 grid on; ylabel('y rel [m]'); legend show;
 
 % rho dot
-ax(f) = nexttile([1,1]); f=f+1; hold on;
+ax(f) = nexttile(state_cog_layout,[1,1]); f=f+1; hold on;
 for i = 1:numel(sensors)
     s = sensors{i}.s;
     if isfield(s, 'rho_dot')

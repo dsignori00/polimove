@@ -6,21 +6,21 @@ close all
 % load opponent mats
 if (~exist('vectornav','var'))
     [file,normal_path] = uigetfile('*.mat','Load vectornav mat');
-    tmp = load(fullfile(normal_path,file));
+    tmp = load(fullfile(normal_path,file), 'log');
     vectornav = tmp.log;
     clearvars tmp;
 end
 
 if (~exist('nov_top','var'))
     [file,normal_path] = uigetfile(fullfile(normal_path,'*.mat'),'Load nov_top mat');
-    tmp = load(fullfile(normal_path,file));
+    tmp = load(fullfile(normal_path,file), 'log');
     nov_top = tmp.log;
     clearvars tmp;
 end
 
 if (~exist('nov_bot','var'))
     [file,normal_path] = uigetfile(fullfile(normal_path,'*.mat'),'Load nov_bot mat');
-    tmp = load(fullfile(normal_path,file));
+    tmp = load(fullfile(normal_path,file), 'log');
     nov_bot = tmp.log;
     clearvars tmp;
 end
