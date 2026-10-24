@@ -50,6 +50,9 @@ if isfield(log,'perception__lidar__clustering_detections')
 
     lid_clust.count    = getDetectionCount(d, lid_clust.x_rel);
     lid_clust.max_det = max(sum(~isnan(lid_clust.x_rel')));
+
+    not_valid_idx = isnan(lid_clust.x_rel);
+    lid_clust.sens_stamp(not_valid_idx)=nan;
 else
     lid_clust = emptyDetectionStruct;
     lid_clust.max_det = 1;
@@ -78,6 +81,9 @@ if isfield(log,'perception__radar__clustering_detections')
 
     rad_clust.count    = getDetectionCount(d, rad_clust.x_rel);
     rad_clust.max_det = max(sum(~isnan(rad_clust.x_rel')));
+
+    not_valid_idx = isnan(rad_clust.x_rel);
+    rad_clust.sens_stamp(not_valid_idx)=nan;
 else
     rad_clust = emptyRadarStruct;
     rad_clust.max_det = 1;
@@ -106,6 +112,9 @@ if isfield(log,'perception__camera__yolo_detections')
 
     cam_yolo.count    = getDetectionCount(d, cam_yolo.x_rel);
     cam_yolo.max_det = max(sum(~isnan(cam_yolo.x_rel')));
+
+    not_valid_idx = isnan(cam_yolo.x_rel);
+    cam_yolo.sens_stamp(not_valid_idx)=nan;
 else
     cam_yolo = emptyDetectionStruct;
     cam_yolo.max_det = 1;
@@ -133,6 +142,9 @@ if isfield(log,'perception__lidar__pointpillars_detections')
 
     lid_pp.count    = getDetectionCount(d, lid_pp.x_rel);
     lid_pp.max_det = max(sum(~isnan(lid_pp.x_rel')));
+
+    not_valid_idx = isnan(lid_pp.x_rel);
+    lid_pp.sens_stamp(not_valid_idx)=nan;
 else
     lid_pp = emptyDetectionStruct;
     lid_pp.max_det = 1;
@@ -159,6 +171,9 @@ if isfield(log,'perception__lidar__bevfusion_detections')
 
     bevfus.count    = getDetectionCount(d, bevfus.x_rel);
     bevfus.max_det = max(sum(~isnan(bevfus.x_rel')));
+
+    not_valid_idx = isnan(bevfus.x_rel);
+    bevfus.sens_stamp(not_valid_idx)=nan;
 else
     bevfus = emptyDetectionStruct;
     bevfus.max_det = 1;
