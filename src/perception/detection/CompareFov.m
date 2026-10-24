@@ -66,12 +66,12 @@ x_lim = [0 inf];
 
 %% LOAD DATA
 
-[lid_clust, rad_clust, cam_yolo, lid_pp] = load_perception(log);
+[lid_clust, rad_clust, cam_yolo, bevfus, lid_pp] = load_perception(log);
 gt = load_ref(log, false, ground_truth, log_ref);
 cam_yolo.sens_stamp(cam_yolo.sens_stamp < 0) = NaN;
 
 if(compare)
-    [lid_clust2, rad_clust2, cam_yolo2, lid_pp2] = load_perception(log2);
+    [lid_clust2, rad_clust2, cam_yolo2, bevfus2, lid_pp2] = load_perception(log2);
     cam_yolo2.sens_stamp(cam_yolo2.sens_stamp < 0) = NaN;
     lid_clust2.sens_stamp = lid_clust2.sens_stamp + double(log2.time_offset_nsec-log.time_offset_nsec)*1e-9;
     rad_clust2.sens_stamp = rad_clust2.sens_stamp + double(log2.time_offset_nsec-log.time_offset_nsec)*1e-9;

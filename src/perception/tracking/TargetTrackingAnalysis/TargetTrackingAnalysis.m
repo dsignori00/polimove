@@ -104,7 +104,7 @@ x_lim = [0 inf];
 
 %% PARSING
 
-[lid_clust, rad_clust, cam_yolo, lid_pp, v2v] = load_perception(log);
+[lid_clust, rad_clust, cam_yolo, lid_pp, bevfus, v2v] = load_perception(log);
 if(use_ref || use_sim_ref); gt = load_ref(log, use_sim_ref, use_ref, log_ref); end
 tt = load_tt(log);
 tt.col = col.tt;

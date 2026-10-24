@@ -1,4 +1,4 @@
-function [lid_clust, rad_clust, cam_yolo, lid_pp, v2v] = load_perception(log)
+function [lid_clust, rad_clust, cam_yolo, lid_pp, bevfus, v2v] = load_perception(log)
 % LOAD_PERCEPTION  Parse perception detections.
 %
 %   All detection structs are guaranteed to exist. Missing sources
@@ -138,6 +138,31 @@ else
     lid_pp.max_det = 1;
 end
 
+%  BEVFUSION DETECTIONS
+
+if isfield(log,'perception__lidar__bevfusion_detections')
+    d = log.perception__lidar__bevfusion_detections;
+
+    bevfus.sens_stamp = d.(sens_stamp_field);
+    bevfus.stamp      = d.stamp__tot;
+
+    bevfus.x_rel   = replaceZeroWithNaN(d.detections__x_rel);
+    bevfus.y_rel   = replaceZeroWithNaN(d.detections__y_rel);
+    bevfus.z_rel   = replaceZeroWithNaN(d.detections__z_rel);
+    bevfus.yaw_rel = rad2deg(replaceZeroWithNaN(d.detections__yaw_rel));
+
+    bevfus.x_map   = replaceZeroWithNaN(d.detections__x_map);
+    bevfus.y_map   = replaceZeroWithNaN(d.detections__y_map);
+    bevfus.z_map   = replaceZeroWithNaN(d.detections__z_map);
+    bevfus.yaw_map = rad2deg(replaceZeroWithNaN(d.detections__yaw_map));
+    bevfus.valid_yaw = d.detections__valid_yaw;
+
+    bevfus.count    = getDetectionCount(d, bevfus.x_rel);
+    bevfus.max_det = max(sum(~isnan(bevfus.x_rel')));
+else
+    bevfus = emptyDetectionStruct;
+    bevfus.max_det = 1;
+end
 
 %  V2V DETECTIONS
 

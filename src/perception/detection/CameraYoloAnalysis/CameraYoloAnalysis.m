@@ -105,14 +105,14 @@ x_lim = [0 inf];
 
 %% PARSING
 
-[lid_clust, rad_clust, cam_yolo, lid_pp, v2v] = load_perception(log);
+[lid_clust, rad_clust, cam_yolo, lid_pp, bevfus, v2v] = load_perception(log);
 cam_yolo.sens_stamp(cam_yolo.sens_stamp < 0) = NaN;
 
 [cam_only, cam_enh] = splitCamYolo(cam_yolo);
 
 if(use_ref || use_sim_ref); gt = load_ref(log, use_sim_ref, use_ref, log_ref); end
 if(compare) 
-    [lid_clust2, rad_clust2, cam_yolo2, lid_pp2, v2v2] = load_perception(log_2);
+    [lid_clust2, rad_clust2, cam_yolo2, lid_pp2, bevfus2, v2v2] = load_perception(log_2);
     cam_yolo2.sens_stamp(cam_yolo2.sens_stamp < 0) = NaN;
     cam_yolo2.stamp = cam_yolo2.stamp + double(log_2.time_offset_nsec-log.time_offset_nsec)*1e-9;
     lid_clust2.stamp = lid_clust2.stamp + double(log_2.time_offset_nsec-log.time_offset_nsec)*1e-9;
@@ -128,7 +128,7 @@ if(compare)
     [cam_only2, cam_enh2] = splitCamYolo(cam_yolo2);
 end
 if(compare2) 
-    [lid_clust3, rad_clust3, cam_yolo3, lid_pp3, v2v3] = load_perception(log_3);
+    [lid_clust3, rad_clust3, cam_yolo3, lid_pp3, bevfus3, v2v3] = load_perception(log_3);
     cam_yolo3.sens_stamp(cam_yolo3.sens_stamp < 0) = NaN;
 
     cam_yolo3.stamp = cam_yolo3.stamp + double(log_3.time_offset_nsec-log.time_offset_nsec)*1e-9;
