@@ -18,9 +18,11 @@ err_stats = {'yaw_map','vx','ax'};
 %% Paths
 normal_path = get_bags_dir();
 opp_dir = get_gt_dir();
+tracking_dir = get_tracking_dir();
 scriptDir = fileparts(mfilename('fullpath'));
 addpath(fullfile(scriptDir,'func'));
 addpath(fullfile(scriptDir,'figs'));
+addpath(fullfile(tracking_dir,'TargetTrackingAnalysis','figs'));
 
 %% Load Data
 
@@ -78,7 +80,6 @@ if(use_ref)
         tmp = load(fullfile(path,file));
         log_ref = tmp.out;
         clearvars tmp;
-        gt = tmp.out;
     end
 end
 if(~exist('log_ref','var'))
