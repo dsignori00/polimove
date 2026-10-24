@@ -20,8 +20,11 @@ function refreshTimeButtonPushed(src, event)
     sensors     = evalin('base','sensors');
     col         = evalin('base','col');
     tt_exists   = evalin('base','tt_exists');
-    tt2_exists  = evalin('base','tt2_exists');
-    tt3_exists  = evalin('base','tt3_exists');
+    compare      = evalin('base','compare');
+    compare2     = evalin('base','compare2');
+
+    if (compare) tt2_exists  = evalin('base','tt2_exists'); end
+    if (compare2) tt3_exists  = evalin('base','tt3_exists'); end
     if(tt_exists)
         tt       = evalin('base','tt');
     end
@@ -29,8 +32,7 @@ function refreshTimeButtonPushed(src, event)
 
     use_ref      = evalin('base','use_ref');
     use_sim_ref  = evalin('base','use_sim_ref');
-    compare      = evalin('base','compare');
-    compare2     = evalin('base','compare2');
+    
 
     if compare
         if (tt2_exists); tt2   = evalin('base','tt2'); end
