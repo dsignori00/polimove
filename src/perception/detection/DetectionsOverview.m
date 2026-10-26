@@ -98,5 +98,6 @@ state_map;
 state_cog;
 range;
 map;
+fov;
 
 link_axes();
